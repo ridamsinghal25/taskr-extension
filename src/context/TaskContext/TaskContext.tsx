@@ -3,12 +3,12 @@ import type { Task, TaskStatus, TaskType } from "@/types/task";
 
 type TaskContextState = {
   tasks: Task[];
-  currentCategoryId: string | null;
   isFetching: boolean;
   isCreating: boolean;
   updatingTaskId: string | null;
   deletingTaskId: string | null;
-  setCurrentCategoryId: (categoryId: string | null) => void;
+  isTaskMode: boolean;
+  setIsTaskMode: (isTaskMode: boolean) => void;
   fetchTasksByCategory: (categoryId: string) => Promise<void>;
   createTask: (
     name: string,
@@ -22,6 +22,7 @@ type TaskContextState = {
     updates: Partial<Pick<Task, "name" | "type" | "status">>,
   ) => Promise<void>;
   deleteTasks: (taskIds: string[], categoryId: string) => Promise<void>;
+  handleTaskModeChange: (mode: "task" | "note") => Promise<boolean | void>;
 };
 
 export const TaskContext = createContext<TaskContextState | undefined>(

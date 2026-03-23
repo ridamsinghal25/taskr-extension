@@ -1,22 +1,34 @@
 import { NoteMarkdown } from "@/components/note/NoteMarkdown";
-import type { Note } from "@/types/note";
 import { format } from "date-fns";
 import { FileText, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNoteContext } from "@/context/NoteContext/NoteContextProvider";
+import { useMemo, useState } from "react";
+import { ConfirmActionDialog } from "../dialog/ConfirmActionDialog";
+import { useParams } from "react-router-dom";
 
-type Props = {
-  notes: Note[];
-  isNoteFetching: boolean;
-  deletingNoteId: string | null;
-  onRequestNoteDelete: (noteId: string) => void;
-};
+export function NoteListPanel() {
+  const [noteIdToDelete, setNoteIdToDelete] = useState<string | null>(null);
+  const { categoryId } = useParams<{ categoryId?: string }>();
 
-export function NoteListPanel({
-  notes,
-  isNoteFetching,
-  deletingNoteId,
-  onRequestNoteDelete,
-}: Props) {
+  const {
+    notes,
+    deletingNoteId,
+    isFetching: isNoteFetching,
+    deleteNotes,
+  } = useNoteContext();
+
+  const notePendingDelete = useMemo(
+    () =>
+      noteIdToDelete ? notes.find((n) => n.id === noteIdToDelete) : undefined,
+    [noteIdToDelete, notes],
+  );
+
+  const handleDeleteNote = async (noteId: string) => {
+    if (!categoryId) return;
+    await deleteNotes([noteId], categoryId);
+  };
+
   return (
     <div className="flex flex-col gap-3 p-3 md:p-4">
       {!isNoteFetching && notes.length === 0 && (
@@ -80,7 +92,7 @@ export function NoteListPanel({
                     variant="ghost"
                     type="button"
                     disabled={isDeletingThis}
-                    onClick={() => onRequestNoteDelete(note.id)}
+                    onClick={() => setNoteIdToDelete(note.id)}
                     className="shrink-0 cursor-pointer text-red-600 hover:text-red-500 disabled:pointer-events-none disabled:opacity-40"
                   >
                     <Trash2 size={16} />
@@ -91,6 +103,28 @@ export function NoteListPanel({
           </div>
         );
       })}
+      <ConfirmActionDialog
+        open={noteIdToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setNoteIdToDelete(null);
+        }}
+        title="Delete this note?"
+        description={
+          notePendingDelete ? (
+            <>
+              <span className="font-medium text-foreground">
+                {notePendingDelete.title}
+              </span>{" "}
+              will be removed permanently. This cannot be undone.
+            </>
+          ) : null
+        }
+        onConfirm={async () => {
+          if (noteIdToDelete) {
+            await handleDeleteNote(noteIdToDelete);
+          }
+        }}
+      />
     </div>
   );
 }

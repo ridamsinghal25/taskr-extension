@@ -11,16 +11,15 @@ import { isApiResponse } from "@/lib/typeGuard";
 import type { Task, TaskStatus, TaskType } from "@/types/task";
 import ApiError from "@/services/ApiError";
 import { TaskContext } from "./TaskContext";
+import { useCategoryContext } from "../CategoryContext/CategoryContextProvider";
 
 export function TaskProvider({ children }: { children: ReactNode }) {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [currentCategoryId, setCurrentCategoryId] = useState<string | null>(
-    null,
-  );
   const [isFetching, setIsFetching] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [updatingTaskId, setUpdatingTaskId] = useState<string | null>(null);
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
+  const [isTaskMode, setIsTaskMode] = useState(true);
 
   const fetchTasksByCategory = useCallback(async (categoryId: string) => {
     setIsFetching(true);
@@ -32,7 +31,11 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         setTasks(Array.isArray(response.data) ? response.data : []);
       } else {
         const err = response as ApiError;
-        toast.error(err.errorResponse?.message || err.errorMessage || "Unable to fetch tasks");
+        toast.error(
+          err.errorResponse?.message ||
+            err.errorMessage ||
+            "Unable to fetch tasks",
+        );
       }
     } catch (err) {
       toast.error((err as Error).message || "Unable to fetch tasks");
@@ -41,6 +44,8 @@ export function TaskProvider({ children }: { children: ReactNode }) {
       setIsFetching(false);
     }
   }, []);
+
+  const { currentCategoryId } = useCategoryContext();
 
   useEffect(() => {
     if (currentCategoryId) {
@@ -71,7 +76,9 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         } else {
           const err = response as ApiError;
           toast.error(
-            err.errorResponse?.message || err.errorMessage || "Unable to create task",
+            err.errorResponse?.message ||
+              err.errorMessage ||
+              "Unable to create task",
           );
         }
       } catch (err) {
@@ -103,7 +110,11 @@ export function TaskProvider({ children }: { children: ReactNode }) {
           toast.success("Task updated successfully");
         } else {
           const err = response as ApiError;
-          toast.error(err.errorResponse?.message || err.errorMessage || "Unable to update task");
+          toast.error(
+            err.errorResponse?.message ||
+              err.errorMessage ||
+              "Unable to update task",
+          );
         }
       } catch (err) {
         toast.error((err as Error).message || "Unable to update task");
@@ -127,7 +138,11 @@ export function TaskProvider({ children }: { children: ReactNode }) {
           toast.success("Tasks deleted successfully");
         } else {
           const err = deleteResp as ApiError;
-          toast.error(err.errorResponse?.message || err.errorMessage || "Unable to delete tasks");
+          toast.error(
+            err.errorResponse?.message ||
+              err.errorMessage ||
+              "Unable to delete tasks",
+          );
         }
       } catch (err) {
         toast.error((err as Error).message || "Unable to delete tasks");
@@ -138,20 +153,37 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const handleTaskModeChange = async (
+    command: string,
+  ): Promise<boolean | void> => {
+    const token = command.trim().toLowerCase();
+
+    if (token === "t" || token === "task") {
+      setIsTaskMode(true);
+      return true;
+    }
+
+    if (token === "n" || token === "note") {
+      setIsTaskMode(false);
+      return true;
+    }
+  };
+
   return (
     <TaskContext.Provider
       value={{
         tasks,
-        currentCategoryId,
         isFetching,
         isCreating,
         updatingTaskId,
         deletingTaskId,
-        setCurrentCategoryId,
+        isTaskMode,
+        setIsTaskMode,
         fetchTasksByCategory,
         createTask,
         updateTask,
         deleteTasks,
+        handleTaskModeChange,
       }}
     >
       {children}

@@ -8,27 +8,44 @@ import {
 import { format } from "date-fns";
 import { Inbox, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useTaskContext } from "@/context/TaskContext/TaskContextProvider";
+import { useParams } from "react-router-dom";
+import { ConfirmActionDialog } from "../dialog/ConfirmActionDialog";
+import { useMemo, useState } from "react";
 
-type Props = {
-  tasks: Task[];
-  isTaskFetching: boolean;
-  updatingTaskId: string | null;
-  deletingTaskId: string | null;
-  onUpdateTask: (
+export function TaskListPanel() {
+  const [taskIdToDelete, setTaskIdToDelete] = useState<string | null>(null);
+
+  const { categoryId } = useParams<{ categoryId?: string }>();
+
+  const {
+    tasks,
+    updatingTaskId,
+    deletingTaskId,
+    isFetching: isTaskFetching,
+    updateTask,
+    deleteTasks,
+  } = useTaskContext();
+
+  const taskPendingDelete = useMemo(
+    () =>
+      taskIdToDelete ? tasks.find((t) => t.id === taskIdToDelete) : undefined,
+    [taskIdToDelete, tasks],
+  );
+
+  const handleUpdateTask = async (
     taskId: string,
     updates: Partial<Pick<Task, "status" | "type">>,
-  ) => Promise<void>;
-  onRequestTaskDelete: (taskId: string) => void;
-};
+  ) => {
+    if (!categoryId) return;
+    await updateTask(taskId, categoryId, updates);
+  };
 
-export function TaskListPanel({
-  tasks,
-  isTaskFetching,
-  updatingTaskId,
-  deletingTaskId,
-  onUpdateTask,
-  onRequestTaskDelete,
-}: Props) {
+  const handleDeleteTask = async (taskId: string) => {
+    if (!categoryId) return;
+    await deleteTasks([taskId], categoryId);
+  };
+
   return (
     <div className="flex flex-col gap-3 p-3 md:p-4">
       {!isTaskFetching && tasks.length === 0 && (
@@ -75,7 +92,7 @@ export function TaskListPanel({
                     key={opt}
                     role="button"
                     onClick={() =>
-                      !isRowBusy && onUpdateTask(task.id, { status: opt })
+                      !isRowBusy && handleUpdateTask(task.id, { status: opt })
                     }
                   >
                     <StatusBadge
@@ -122,7 +139,7 @@ export function TaskListPanel({
                   variant="ghost"
                   type="button"
                   disabled={isRowBusy}
-                  onClick={() => onRequestTaskDelete(task.id)}
+                  onClick={() => setTaskIdToDelete(task.id)}
                   className="shrink-0 cursor-pointer text-red-600 hover:text-red-500 disabled:pointer-events-none disabled:opacity-40"
                 >
                   <Trash2 size={16} />
@@ -137,7 +154,7 @@ export function TaskListPanel({
                     key={opt}
                     role="button"
                     onClick={() =>
-                      !isRowBusy && onUpdateTask(task.id, { type: opt })
+                      !isRowBusy && handleUpdateTask(task.id, { type: opt })
                     }
                   >
                     <TypeBadge
@@ -152,6 +169,29 @@ export function TaskListPanel({
           </div>
         );
       })}
+
+      <ConfirmActionDialog
+        open={taskIdToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setTaskIdToDelete(null);
+        }}
+        title="Delete this task?"
+        description={
+          taskPendingDelete ? (
+            <>
+              <span className="font-medium text-foreground">
+                {taskPendingDelete.name}
+              </span>{" "}
+              will be removed permanently. This cannot be undone.
+            </>
+          ) : null
+        }
+        onConfirm={async () => {
+          if (taskIdToDelete) {
+            await handleDeleteTask(taskIdToDelete);
+          }
+        }}
+      />
     </div>
   );
 }

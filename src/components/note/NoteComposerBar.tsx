@@ -1,9 +1,17 @@
 import FormFieldInput from "@/components/basic/FormFieldInput";
-import { NoteMarkdown } from "@/components/note/NoteMarkdown";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+} from "@/components/ui/form";
+import { useNoteContext } from "@/context/NoteContext/NoteContextProvider";
 import { ClipboardList, Loader2, Send } from "lucide-react";
-import type { UseFormReturn } from "react-hook-form";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { useParams } from "react-router-dom";
 
 export type NoteComposerValues = {
   title: string;
@@ -11,28 +19,56 @@ export type NoteComposerValues = {
 };
 
 type Props = {
-  form: UseFormReturn<NoteComposerValues>;
-  categoryId: string;
-  noteError: string | null;
-  isNoteActionInProgress: boolean;
-  isNoteCreating: boolean;
-  onSubmit: (title: string, content: string) => Promise<boolean>;
   onSwitchToTasks: () => void;
 };
 
-export function NoteComposerBar({
-  form,
-  categoryId,
-  noteError,
-  isNoteActionInProgress,
-  isNoteCreating,
-  onSubmit,
-  onSwitchToTasks,
-}: Props) {
-  const chatFooterClass =
-    "border-t border-primary/20 bg-linear-to-t from-primary/6 to-primary/2 px-4 py-3 backdrop-blur-md dark:from-primary/10 dark:to-primary/5 dark:border-primary/25";
+const chatFooterClass =
+  "border-t border-primary/20 bg-linear-to-t from-primary/6 to-primary/2 px-4 py-3 backdrop-blur-md dark:from-primary/10 dark:to-primary/5 dark:border-primary/25";
 
-  const contentWatch = form.watch("content") ?? "";
+export function NoteComposerBar({ onSwitchToTasks }: Props) {
+  const [noteError, setNoteError] = useState<string | null>(null);
+  let { categoryId } = useParams<{ categoryId?: string }>();
+
+  const noteForm = useForm<NoteComposerValues>({
+    defaultValues: { title: "", content: "" },
+  });
+
+  useEffect(() => {
+    noteForm.reset({ title: "", content: "" });
+  }, [categoryId]);
+
+  const {
+    isCreating: isNoteCreating,
+    deletingNoteId,
+    createNote,
+  } = useNoteContext();
+
+  const handleNoteSubmit = async (
+    title: string,
+    content: string,
+  ): Promise<boolean> => {
+    if (!categoryId) {
+      setNoteError("Select a category before saving a note.");
+      return false;
+    }
+
+    const t = title.trim();
+    const c = content.trim();
+    if (!t) {
+      setNoteError("Title is required.");
+      return false;
+    }
+    if (!c) {
+      setNoteError("Markdown content is required.");
+      return false;
+    }
+
+    setNoteError(null);
+    await createNote(t, c, categoryId);
+    return true;
+  };
+
+  const isNoteActionInProgress = isNoteCreating || deletingNoteId !== null;
 
   return (
     <div className={chatFooterClass}>
@@ -49,26 +85,26 @@ export function NoteComposerBar({
         </Button>
       </div>
 
-      <Form {...form}>
+      <Form {...noteForm}>
         <form
-          onSubmit={form.handleSubmit((data) =>
-            onSubmit(data.title, data.content).then((success) => {
+          onSubmit={noteForm.handleSubmit((data) =>
+            handleNoteSubmit(data.title, data.content).then((success) => {
               if (success) {
-                form.reset({ title: "", content: "" });
+                noteForm.reset({ title: "", content: "" });
               }
             }),
           )}
           className="flex flex-col gap-3"
         >
           <FormFieldInput
-            form={form}
+            form={noteForm}
             name="title"
             placeholder="Note title"
             className="h-9 border-primary/20 bg-background/85 text-foreground shadow-inner shadow-primary/5 backdrop-blur focus-visible:border-primary/45 focus-visible:ring-2 focus-visible:ring-primary/25"
           />
 
           <FormField
-            control={form.control}
+            control={noteForm.control}
             name="content"
             render={({ field, fieldState }) => (
               <FormItem>
@@ -76,7 +112,7 @@ export function NoteComposerBar({
                   <textarea
                     placeholder="Markdown content — headings, lists, code blocks…"
                     rows={5}
-                    className="flex min-h-[120px] w-full resize-y rounded-md border border-primary/20 bg-background/85 px-3 py-2 text-sm text-foreground shadow-inner shadow-primary/5 backdrop-blur outline-none focus-visible:border-primary/45 focus-visible:ring-2 focus-visible:ring-primary/25 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex min-h-20 h-20 w-full resize-y rounded-md border border-primary/20 bg-background/85 px-3 py-2 text-sm text-foreground shadow-inner shadow-primary/5 backdrop-blur outline-none focus-visible:border-primary/45 focus-visible:ring-2 focus-visible:ring-primary/25 disabled:cursor-not-allowed disabled:opacity-50"
                     {...field}
                   />
                 </FormControl>
@@ -87,26 +123,13 @@ export function NoteComposerBar({
             )}
           />
 
-          <div className="rounded-lg border border-primary/15 bg-background/60 p-3 shadow-inner shadow-primary/5">
-            <p className="mb-2 text-xs font-medium text-muted-foreground">
-              Preview
-            </p>
-            {contentWatch.trim() ? (
-              <NoteMarkdown source={contentWatch} />
-            ) : (
-              <p className="text-xs italic text-muted-foreground">
-                Preview appears as you type Markdown…
-              </p>
-            )}
-          </div>
-
           <div className="flex items-center gap-2">
             <Button
               type="submit"
               disabled={
                 !categoryId ||
-                !(form.watch("title") ?? "").trim().length ||
-                !(form.watch("content") ?? "").trim().length ||
+                !(noteForm.watch("title") ?? "").trim().length ||
+                !(noteForm.watch("content") ?? "").trim().length ||
                 isNoteActionInProgress
               }
             >

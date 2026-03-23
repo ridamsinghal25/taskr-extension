@@ -14,6 +14,9 @@ import { CategoryContext } from "./CategoryContext";
 
 export function CategoryProvider({ children }: { children: ReactNode }) {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [currentCategoryId, setCurrentCategoryId] = useState<string | null>(
+    null,
+  );
   const [isFetching, setIsFetching] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -27,7 +30,11 @@ export function CategoryProvider({ children }: { children: ReactNode }) {
         setCategories(Array.isArray(response.data) ? response.data : []);
       } else {
         const err = response as ApiError;
-        toast.error(err.errorResponse?.message || err.errorMessage || "Unable to fetch categories");
+        toast.error(
+          err.errorResponse?.message ||
+            err.errorMessage ||
+            "Unable to fetch categories",
+        );
       }
     } catch (err) {
       toast.error((err as Error).message || "Unable to fetch categories");
@@ -50,7 +57,11 @@ export function CategoryProvider({ children }: { children: ReactNode }) {
         toast.success("Category created successfully");
       } else {
         const err = response as ApiError;
-        toast.error(err.errorResponse?.message || err.errorMessage || "Unable to create category");
+        toast.error(
+          err.errorResponse?.message ||
+            err.errorMessage ||
+            "Unable to create category",
+        );
       }
     } catch (err) {
       toast.error((err as Error).message || "Unable to create category");
@@ -76,7 +87,11 @@ export function CategoryProvider({ children }: { children: ReactNode }) {
           toast.success("Category updated successfully");
         } else {
           const err = response as ApiError;
-          toast.error(err.errorResponse?.message || err.errorMessage || "Unable to update category");
+          toast.error(
+            err.errorResponse?.message ||
+              err.errorMessage ||
+              "Unable to update category",
+          );
         }
       } catch (err) {
         toast.error((err as Error).message || "Unable to update category");
@@ -100,7 +115,11 @@ export function CategoryProvider({ children }: { children: ReactNode }) {
         toast.success("Categories deleted successfully");
       } else {
         const err = response as ApiError;
-        toast.error(err.errorResponse?.message || err.errorMessage || "Unable to delete categories");
+        toast.error(
+          err.errorResponse?.message ||
+            err.errorMessage ||
+            "Unable to delete categories",
+        );
       }
     } catch (err) {
       toast.error((err as Error).message || "Unable to delete categories");
@@ -118,7 +137,11 @@ export function CategoryProvider({ children }: { children: ReactNode }) {
         setCategories(Array.isArray(response.data) ? response.data : []);
       } else {
         const err = response as ApiError;
-        toast.error(err.errorResponse?.message || err.errorMessage || "Unable to get categories by ids");
+        toast.error(
+          err.errorResponse?.message ||
+            err.errorMessage ||
+            "Unable to get categories by ids",
+        );
       }
     } catch (err) {
       toast.error((err as Error).message || "Unable to get categories by ids");
@@ -135,6 +158,8 @@ export function CategoryProvider({ children }: { children: ReactNode }) {
         isCreating,
         isUpdating,
         isDeleting,
+        currentCategoryId,
+        setCurrentCategoryId,
         fetchCategories,
         createCategory,
         updateCategory,

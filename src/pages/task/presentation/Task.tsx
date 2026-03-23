@@ -5,18 +5,10 @@ import type { Category } from "@/types/category";
 import { abbreviate } from "@/lib/utils";
 import { TasksSkeleton } from "@/components/task/TaskSkeleton";
 import { Button } from "@/components/ui/button";
-import { useForm } from "react-hook-form";
-import { useEffect, useState } from "react";
 import { TaskListPanel } from "@/components/task/TaskListPanel";
-import {
-  TaskComposerBar,
-  type TaskComposerValues,
-} from "@/components/task/TaskComposerBar";
+import { TaskComposerBar } from "@/components/task/TaskComposerBar";
 import { NoteListPanel } from "@/components/note/NoteListPanel";
-import {
-  NoteComposerBar,
-  type NoteComposerValues,
-} from "@/components/note/NoteComposerBar";
+import { NoteComposerBar } from "@/components/note/NoteComposerBar";
 import type { Note } from "@/types/note";
 
 export type ComposerMode = "task" | "note";
@@ -28,21 +20,8 @@ type Props = {
   notes: Note[];
   isTaskFetching: boolean;
   isNoteFetching: boolean;
-  isTaskCreating: boolean;
-  isNoteCreating: boolean;
-  updatingTaskId: string | null;
-  deletingTaskId: string | null;
-  deletingNoteId: string | null;
-  commandError: string | null;
-  noteError: string | null;
-  onChatCommandSubmit: (command: string) => Promise<boolean>;
-  onNoteSubmit: (title: string, content: string) => Promise<boolean>;
-  onUpdateTask: (
-    taskId: string,
-    updates: Partial<Pick<Task, "status" | "type">>,
-  ) => Promise<void>;
-  onRequestTaskDelete: (taskId: string) => void;
-  onRequestNoteDelete: (noteId: string) => void;
+  isTaskMode: boolean;
+  setIsTaskMode: (isTaskMode: boolean) => void;
 };
 
 export function Task({
@@ -52,42 +31,10 @@ export function Task({
   notes,
   isTaskFetching,
   isNoteFetching,
-  isTaskCreating,
-  isNoteCreating,
-  updatingTaskId,
-  deletingTaskId,
-  deletingNoteId,
-  commandError,
-  noteError,
-  onChatCommandSubmit,
-  onNoteSubmit,
-  onUpdateTask,
-  onRequestTaskDelete,
-  onRequestNoteDelete,
+  isTaskMode,
+  setIsTaskMode,
 }: Props) {
-  const taskForm = useForm<TaskComposerValues>({
-    defaultValues: { command: "" },
-  });
-
-  const noteForm = useForm<NoteComposerValues>({
-    defaultValues: { title: "", content: "" },
-  });
-
-  const [localMode, setLocalMode] = useState<ComposerMode>("task");
-
-  useEffect(() => {
-    setLocalMode("task");
-    taskForm.reset({ command: "" });
-    noteForm.reset({ title: "", content: "" });
-  }, [categoryId]);
-
-  const isTaskActionInProgress =
-    isTaskCreating || updatingTaskId !== null || deletingTaskId !== null;
-
-  const isNoteActionInProgress = isNoteCreating || deletingNoteId !== null;
-
-  const isLoadingContent =
-    localMode === "task" ? isTaskFetching : isNoteFetching;
+  const isLoadingContent = isTaskMode ? isTaskFetching : isNoteFetching;
 
   if (isLoadingContent) {
     return <TasksSkeleton />;
@@ -99,21 +46,6 @@ export function Task({
     "flex items-center gap-3 border-b border-primary/20 bg-linear-to-r from-primary/8 via-primary/4 to-blue-500/6 p-4 shadow-sm shadow-primary/5 backdrop-blur-md dark:from-primary/15 dark:via-primary/8 dark:to-blue-950/40 dark:border-primary/25";
   const chatFooterClass =
     "border-t border-primary/20 bg-linear-to-t from-primary/6 to-primary/2 px-4 py-3 backdrop-blur-md dark:from-primary/10 dark:to-primary/5 dark:border-primary/25";
-
-  const setMode = (mode: ComposerMode) => {
-    setLocalMode(mode);
-  };
-
-  const handleTaskComposerSubmit = async (
-    command: string,
-  ): Promise<boolean> => {
-    const token = command.trim().toLowerCase();
-    if (token === "n" || token === "note") {
-      setMode("note");
-      return true;
-    }
-    return onChatCommandSubmit(command);
-  };
 
   if (!categoryId) {
     return (
@@ -173,8 +105,8 @@ export function Task({
 
   const categoryName =
     categories.find((cat) => cat.id === categoryId)?.name ?? "";
-  const listCount = localMode === "task" ? tasks.length : notes.length;
-  const listLabel = localMode === "task" ? "Tasks" : "Notes";
+  const listCount = isTaskMode ? tasks.length : notes.length;
+  const listLabel = isTaskMode ? "Tasks" : "Notes";
 
   return (
     <div className="flex h-full w-full overflow-hidden">
@@ -193,18 +125,18 @@ export function Task({
             </span>
           </div>
 
-          <div className="flex shrink-0 gap-1 rounded-lg border border-primary/20 bg-background/50 p-0.5 text-xs font-medium">
+          <div className="flex shrink-0 gap-1 rounded-lg border border-primary/20 bg-background/50 p-0.5 text-xs font-medium cursor-pointer">
             <button
               type="button"
-              onClick={() => setMode("task")}
-              className={`rounded-md px-2.5 py-1 transition ${localMode === "task" ? "bg-primary/20 text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              onClick={() => setIsTaskMode(true)}
+              className={`rounded-md px-2.5 py-1 transition cursor-pointer ${isTaskMode ? "bg-primary/20 text-foreground" : "text-muted-foreground hover:text-foreground"}`}
             >
               Tasks
             </button>
             <button
               type="button"
-              onClick={() => setMode("note")}
-              className={`rounded-md px-2.5 py-1 transition ${localMode === "note" ? "bg-primary/20 text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              onClick={() => setIsTaskMode(false)}
+              className={`rounded-md px-2.5 py-1 transition cursor-pointer ${!isTaskMode ? "bg-primary/20 text-foreground" : "text-muted-foreground hover:text-foreground"}`}
             >
               Notes
             </button>
@@ -212,44 +144,13 @@ export function Task({
         </div>
 
         <ScrollArea className="flex-1 overflow-hidden">
-          {localMode === "task" ? (
-            <TaskListPanel
-              tasks={tasks}
-              isTaskFetching={isTaskFetching}
-              updatingTaskId={updatingTaskId}
-              deletingTaskId={deletingTaskId}
-              onUpdateTask={onUpdateTask}
-              onRequestTaskDelete={onRequestTaskDelete}
-            />
-          ) : (
-            <NoteListPanel
-              notes={notes}
-              isNoteFetching={isNoteFetching}
-              deletingNoteId={deletingNoteId}
-              onRequestNoteDelete={onRequestNoteDelete}
-            />
-          )}
+          {isTaskMode ? <TaskListPanel /> : <NoteListPanel />}
         </ScrollArea>
 
-        {localMode === "task" ? (
-          <TaskComposerBar
-            form={taskForm}
-            categoryId={categoryId}
-            commandError={commandError}
-            isTaskActionInProgress={isTaskActionInProgress}
-            isTaskCreating={isTaskCreating}
-            onSubmit={handleTaskComposerSubmit}
-          />
+        {isTaskMode ? (
+          <TaskComposerBar />
         ) : (
-          <NoteComposerBar
-            form={noteForm}
-            categoryId={categoryId}
-            noteError={noteError}
-            isNoteActionInProgress={isNoteActionInProgress}
-            isNoteCreating={isNoteCreating}
-            onSubmit={onNoteSubmit}
-            onSwitchToTasks={() => setMode("task")}
-          />
+          <NoteComposerBar onSwitchToTasks={() => setIsTaskMode(true)} />
         )}
       </div>
     </div>

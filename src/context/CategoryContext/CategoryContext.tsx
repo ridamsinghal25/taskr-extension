@@ -7,6 +7,8 @@ type CategoryContextState = {
   isCreating: boolean;
   isUpdating: boolean;
   isDeleting: boolean;
+  currentCategoryId: string | null;
+  setCurrentCategoryId: (categoryId: string | null) => void;
   fetchCategories: () => Promise<void>;
   createCategory: (name: string) => Promise<void>;
   updateCategory: (categoryId: string, name: string) => Promise<void>;

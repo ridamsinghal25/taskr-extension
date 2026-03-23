@@ -11,6 +11,7 @@ import { isApiResponse } from "@/lib/typeGuard";
 import type { Note } from "@/types/note";
 import ApiError from "@/services/ApiError";
 import { NoteContext } from "./NoteContext";
+import { useCategoryContext } from "../CategoryContext/CategoryContextProvider";
 
 function normalizeNote(raw: Note): Note {
   return {
@@ -28,20 +29,18 @@ function normalizeNote(raw: Note): Note {
 
 export function NoteProvider({ children }: { children: ReactNode }) {
   const [notes, setNotes] = useState<Note[]>([]);
-  const [currentCategoryId, setCurrentCategoryId] = useState<string | null>(
-    null,
-  );
   const [isFetching, setIsFetching] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [deletingNoteId, setDeletingNoteId] = useState<string | null>(null);
+
+  const { currentCategoryId } = useCategoryContext();
 
   const fetchNotesByCategory = useCallback(async (categoryId: string) => {
     setIsFetching(true);
     setNotes([]);
     try {
-      const response = await NoteService.getNotesByCategoryId<Note[]>(
-        categoryId,
-      );
+      const response =
+        await NoteService.getNotesByCategoryId<Note[]>(categoryId);
       if (isApiResponse(response)) {
         const list = Array.isArray(response.data) ? response.data : [];
         setNotes(list.map(normalizeNote));
@@ -130,11 +129,9 @@ export function NoteProvider({ children }: { children: ReactNode }) {
     <NoteContext.Provider
       value={{
         notes,
-        currentCategoryId,
         isFetching,
         isCreating,
         deletingNoteId,
-        setCurrentCategoryId,
         fetchNotesByCategory,
         createNote,
         deleteNotes,
