@@ -44,6 +44,12 @@ export function NoteListPanel() {
     editForm.reset({ title: "", content: "" });
   }, [categoryId]);
 
+  useEffect(() => {
+    if (!updatingNoteId) {
+      cancelEditing();
+    }
+  }, [updatingNoteId]);
+
   const notePendingDelete = useMemo(
     () =>
       noteIdToDelete ? notes.find((n) => n.id === noteIdToDelete) : undefined,
@@ -89,7 +95,7 @@ export function NoteListPanel() {
     }
 
     editForm.clearErrors();
-    await updateNote(editingNoteId, { title, content }, categoryId);
+   await updateNote(editingNoteId, { title, content }, categoryId);
   };
 
   return (

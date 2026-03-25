@@ -121,13 +121,14 @@ export function NoteProvider({ children }: { children: ReactNode }) {
             ),
           );
           toast.success("Note updated successfully");
+        } else {
+          const err = response as ApiError;
+          toast.error(
+            err.errorResponse?.message ||
+              err.errorMessage ||
+              "Unable to update note",
+          );
         }
-        const err = response as ApiError;
-        toast.error(
-          err.errorResponse?.message ||
-            err.errorMessage ||
-            "Unable to update note",
-        );
       } catch (err) {
         toast.error((err as Error).message || "Unable to update note");
       } finally {
