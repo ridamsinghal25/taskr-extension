@@ -9,11 +9,18 @@ import { toast } from "react-toastify";
 import CategoryService from "@/extension-services/category.services";
 import { isApiResponse } from "@/lib/typeGuard";
 import type { Category } from "@/types/category";
+import {
+  clearCategoryCache,
+  getCachedCategories,
+  setCachedCategories,
+} from "@/lib/category/categoryLocalStorage";
 import ApiError from "@/services/ApiError";
 import { CategoryContext } from "./CategoryContext";
 
 export function CategoryProvider({ children }: { children: ReactNode }) {
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<Category[]>(() => {
+    return getCachedCategories() ?? [];
+  });
   const [currentCategoryId, setCurrentCategoryId] = useState<string | null>(
     null,
   );
@@ -24,10 +31,20 @@ export function CategoryProvider({ children }: { children: ReactNode }) {
 
   const fetchCategories = useCallback(async () => {
     setIsFetching(true);
+
+    const cachedCategories = getCachedCategories();
+    if (cachedCategories && cachedCategories.length > 0) {
+      setCategories(cachedCategories);
+      setIsFetching(false);
+      return;
+    }
+
     try {
       const response = await CategoryService.getCategories<Category[]>();
       if (isApiResponse(response)) {
-        setCategories(Array.isArray(response.data) ? response.data : []);
+        const next = Array.isArray(response.data) ? response.data : [];
+        setCategories(next);
+        setCachedCategories(next);
       } else {
         const err = response as ApiError;
         toast.error(
@@ -54,6 +71,7 @@ export function CategoryProvider({ children }: { children: ReactNode }) {
       const response = await CategoryService.createCategory<Category>(name);
       if (isApiResponse(response)) {
         setCategories((prev) => [...prev, response.data]);
+        clearCategoryCache();
         toast.success("Category created successfully");
       } else {
         const err = response as ApiError;
