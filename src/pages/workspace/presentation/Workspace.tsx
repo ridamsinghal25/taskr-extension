@@ -24,7 +24,7 @@ type Props = {
   setIsTaskMode: (isTaskMode: boolean) => void;
 };
 
-export function Task({
+export function Workspace({
   categoryId,
   categories,
   tasks,

@@ -1,11 +1,11 @@
 import { useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { Task as TaskComponent } from "../presentation/Task";
+import { Workspace  } from "../presentation/Workspace";
 import { useTaskContext } from "@/context/TaskContext/TaskContextProvider";
 import { useNoteContext } from "@/context/NoteContext/NoteContextProvider";
 import { useCategoryContext } from "@/context/CategoryContext/CategoryContextProvider";
 
-export function TaskContainer() {
+export function WorkspaceContainer() {
   let { categoryId } = useParams<{ categoryId?: string }>();
 
   const { setCurrentCategoryId } = useCategoryContext();
@@ -31,7 +31,7 @@ export function TaskContainer() {
 
   return (
     <>
-      <TaskComponent
+      <Workspace
         categoryId={categoryId as string}
         categories={categories}
         tasks={tasks}
