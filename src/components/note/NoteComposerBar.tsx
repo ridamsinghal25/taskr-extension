@@ -40,8 +40,29 @@ export function NoteComposerBar({ onSwitchToTasks }: Props) {
   const {
     isCreating: isNoteCreating,
     deletingNoteId,
+    updatingNoteId,
     createNote,
+    isNoteComposerVisible,
+    setIsNoteComposerVisible,
   } = useNoteContext();
+
+    useEffect(() => {
+      const handleKeyDown = (event: KeyboardEvent) => {
+        if (event.key === "Escape") {
+          setIsNoteComposerVisible(false);
+        }
+
+        if (event.shiftKey && event.key.toLowerCase() === "o") {
+          setIsNoteComposerVisible((prev: boolean) => (!prev));
+        }
+      };
+
+      window.addEventListener("keydown", handleKeyDown);
+
+      return () => {
+        window.removeEventListener("keydown", handleKeyDown);
+      };
+    }, []);
 
   const handleNoteSubmit = async (
     title: string,
@@ -68,11 +89,12 @@ export function NoteComposerBar({ onSwitchToTasks }: Props) {
     return true;
   };
 
-  const isNoteActionInProgress = isNoteCreating || deletingNoteId !== null;
+  const isNoteActionInProgress =
+    isNoteCreating || deletingNoteId !== null || updatingNoteId !== null;
 
   return (
     <div className={chatFooterClass}>
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+      <div className={`${isNoteComposerVisible ? "mb-3" : ""} flex flex-wrap items-center justify-between gap-2`}>
         <Button
           type="button"
           variant="ghost"
@@ -83,8 +105,18 @@ export function NoteComposerBar({ onSwitchToTasks }: Props) {
           <ClipboardList className="mr-1.5 h-3.5 w-3.5 opacity-70" />
           Switch to tasks
         </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-8 text-xs text-muted-foreground hover:text-foreground"
+          onClick={() => setIsNoteComposerVisible(!isNoteComposerVisible)}
+        >
+          {isNoteComposerVisible ? "Close" : "Open"}
+        </Button>
       </div>
 
+    {isNoteComposerVisible && (
       <Form {...noteForm}>
         <form
           onSubmit={noteForm.handleSubmit((data) =>
@@ -144,9 +176,10 @@ export function NoteComposerBar({ onSwitchToTasks }: Props) {
 
           {noteError && (
             <div className="text-xs text-destructive">{noteError}</div>
-          )}
-        </form>
-      </Form>
+            )}
+          </form>
+        </Form>
+      )}
     </div>
   );
 }

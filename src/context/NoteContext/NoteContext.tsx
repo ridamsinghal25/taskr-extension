@@ -1,4 +1,4 @@
-import { createContext } from "react";
+import { createContext, type Dispatch, type SetStateAction } from "react";
 import type { Note } from "@/types/note";
 
 type NoteContextState = {
@@ -6,10 +6,18 @@ type NoteContextState = {
   isFetching: boolean;
   isCreating: boolean;
   deletingNoteId: string | null;
+  updatingNoteId: string | null;
+  isNoteComposerVisible: boolean;
+  setIsNoteComposerVisible: Dispatch<SetStateAction<boolean>>;
   fetchNotesByCategory: (categoryId: string) => Promise<void>;
   createNote: (
     title: string,
     content: string,
+    categoryId: string,
+  ) => Promise<void>;
+  updateNote: (
+    noteId: string,
+    updates: Partial<{ title: string; content: string }>,
     categoryId: string,
   ) => Promise<void>;
   deleteNotes: (noteIds: string[], categoryId: string) => Promise<void>;

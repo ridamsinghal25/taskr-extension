@@ -32,6 +32,8 @@ export function NoteProvider({ children }: { children: ReactNode }) {
   const [isFetching, setIsFetching] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [deletingNoteId, setDeletingNoteId] = useState<string | null>(null);
+  const [updatingNoteId, setUpdatingNoteId] = useState<string | null>(null);
+  const [isNoteComposerVisible, setIsNoteComposerVisible] = useState(true);
 
   const { currentCategoryId } = useCategoryContext();
 
@@ -97,6 +99,44 @@ export function NoteProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const updateNote = useCallback(
+    async (
+      noteId: string,
+      updates: Partial<{ title: string; content: string }>,
+      categoryId: string,
+    ): Promise<void> => {
+      setUpdatingNoteId(noteId);
+      try {
+        const response = await NoteService.updateNote<Note>(
+          noteId,
+          updates,
+          categoryId,
+        );
+        if (isApiResponse(response)) {
+          setNotes((prev) =>
+            prev.map((n) =>
+              n.id === noteId
+                ? normalizeNote({ ...n, ...response.data } as Note)
+                : n,
+            ),
+          );
+          toast.success("Note updated successfully");
+        }
+        const err = response as ApiError;
+        toast.error(
+          err.errorResponse?.message ||
+            err.errorMessage ||
+            "Unable to update note",
+        );
+      } catch (err) {
+        toast.error((err as Error).message || "Unable to update note");
+      } finally {
+        setUpdatingNoteId(null);
+      }
+    },
+    [],
+  );
+
   const deleteNotes = useCallback(
     async (noteIds: string[], categoryId: string) => {
       const primaryDeletingId = noteIds[0] ?? null;
@@ -132,8 +172,12 @@ export function NoteProvider({ children }: { children: ReactNode }) {
         isFetching,
         isCreating,
         deletingNoteId,
+        updatingNoteId,
+        isNoteComposerVisible,
+        setIsNoteComposerVisible,
         fetchNotesByCategory,
         createNote,
+        updateNote,
         deleteNotes,
       }}
     >
