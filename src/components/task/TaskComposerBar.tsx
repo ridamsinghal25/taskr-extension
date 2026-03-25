@@ -38,6 +38,7 @@ export function TaskComposerBar() {
     updatingTaskId,
     deletingTaskId,
     createTask,
+    setIsTaskMode
   } = useTaskContext();
 
   const handleCreateTask = async (
@@ -53,6 +54,11 @@ export function TaskComposerBar() {
     if (!categoryId) {
       setCommandError("Select a category before adding tasks via command.");
       return false;
+    }
+
+    if (command.trim() === "n" || command.trim() === "note") {
+      setIsTaskMode(false);
+      return true;
     }
 
     const tokens = command.trim().split(/\s+/);
