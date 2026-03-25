@@ -9,7 +9,11 @@ export default defineManifest({
     "newtab": "index.html"
   },
   permissions: ['storage'],
-  host_permissions: ['https://localhost:3000/*'],
+  host_permissions: [
+    'https://localhost:3000/*',
+    'https://api.pexels.com/*',
+    'https://images.pexels.com/*',
+  ],
   background: {
     service_worker: 'src/background/service-worker.ts',
     type: 'module',

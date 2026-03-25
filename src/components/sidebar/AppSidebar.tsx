@@ -59,7 +59,7 @@ export function AppSidebar() {
   const [renameDraft, setRenameDraft] = useState("");
 
   const currentCategoryId = useMemo(() => {
-    const match = location.pathname.match(/\/categories\/([^/]+)/);
+    const match = location.pathname.match(/\/workspace\/categories\/([^/]+)/);
     return match ? match[1] : null;
   }, [location.pathname]);
 
@@ -72,7 +72,7 @@ export function AppSidebar() {
   );
 
   const handleCategoryNavigate = (categoryId: string) => {
-    navigate(`/categories/${categoryId}`);
+    navigate(`/workspace/categories/${categoryId}`);
   };
 
   const startRename = (category: { id: string; name: string }) => {
@@ -337,7 +337,7 @@ export function AppSidebar() {
           const id = categoryIdToDelete;
           await deleteCategories([id]);
           if (currentCategoryId === id) {
-            navigate("/");
+            navigate("/workspace");
           }
         }}
       />
