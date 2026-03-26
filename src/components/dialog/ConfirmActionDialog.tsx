@@ -83,6 +83,7 @@ export function ConfirmActionDialog({
             disabled={pending}
             className="gap-2"
             onClick={handleConfirm}
+            autoFocus
           >
             {pending ? (
               <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden />

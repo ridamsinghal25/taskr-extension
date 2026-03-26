@@ -33,7 +33,7 @@ export function NoteProvider({ children }: { children: ReactNode }) {
   const [isCreating, setIsCreating] = useState(false);
   const [deletingNoteId, setDeletingNoteId] = useState<string | null>(null);
   const [updatingNoteId, setUpdatingNoteId] = useState<string | null>(null);
-  const [isNoteComposerVisible, setIsNoteComposerVisible] = useState(true);
+  const [isNoteComposerVisible, setIsNoteComposerVisible] = useState(false);
 
   const { currentCategoryId } = useCategoryContext();
 

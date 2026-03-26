@@ -91,6 +91,7 @@ export function CategoryProvider({ children }: { children: ReactNode }) {
   const updateCategory = useCallback(
     async (categoryId: string, name: string) => {
       setIsUpdating(true);
+      clearCategoryCache();
       try {
         const response = await CategoryService.updateCategory<Category>(
           categoryId,
@@ -122,6 +123,7 @@ export function CategoryProvider({ children }: { children: ReactNode }) {
 
   const deleteCategories = useCallback(async (categoryIds: string[]) => {
     setIsDeleting(true);
+    clearCategoryCache();
     try {
       const response = await CategoryService.deleteCategories<{
         count: number;

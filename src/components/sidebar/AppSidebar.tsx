@@ -105,7 +105,7 @@ export function AppSidebar() {
   const busy = isUpdating || isDeleting;
 
   return (
-    <Sidebar>
+    <Sidebar className="w-80">
       <div className={cn(chatShellClass, "flex min-h-0 flex-1 flex-col")}>
         <SidebarHeader className={cn(chatHeaderClass, "border-sidebar-border")}>
           <div className="flex w-full items-center justify-between gap-2">
