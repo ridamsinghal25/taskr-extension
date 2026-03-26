@@ -109,7 +109,7 @@ export function TaskListPanel() {
                 aria-busy={isRowBusy}
               >
                 <div className="min-w-0 flex-1">
-                  <p className="wrap-break-word text-sm">{task.name}</p>
+                  <p className="wrap-break-word text-sm whitespace-pre-wrap">{task.name}</p>
                   <p className="mt-1 text-xs opacity-80">
                     {format(new Date(task.createdAt), "EEE, MMM d")}
                   </p>

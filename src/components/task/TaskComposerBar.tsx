@@ -1,4 +1,3 @@
-import FormFieldInput from "@/components/basic/FormFieldInput";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { useTaskContext } from "@/context/TaskContext/TaskContextProvider";
@@ -13,7 +12,9 @@ import { Loader2, Send } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useParams } from "react-router-dom";
+import FormFieldTextarea from "../basic/FormFieldTextarea";
 
+import '@mdxeditor/editor/style.css';
 export type TaskComposerValues = {
   command: string;
 };
@@ -61,7 +62,8 @@ export function TaskComposerBar() {
       return true;
     }
 
-    const tokens = command.trim().split(/\s+/);
+    const tokens = command.trim().split(/[ ]+/); // only spaces
+
     if (tokens.length === 0) {
       setCommandError(
         "Enter a task name. Example: Buy milk -t normal -s pending",
@@ -71,7 +73,6 @@ export function TaskComposerBar() {
 
     let type = TaskType.Normal;
     let status = TaskStatus.Pending;
-    const nameParts: string[] = [];
 
     for (let i = 0; i < tokens.length; i++) {
       const token = tokens[i];
@@ -93,13 +94,15 @@ export function TaskComposerBar() {
           return false;
         }
         status = value;
-      } else {
-        nameParts.push(token);
       }
     }
 
-    const name = nameParts.join(" ").trim() || "New task";
-    setCommandError(null);
+    // ✅ preserve original formatting
+    let name = command
+      .replace(/-t\s+\w+/g, "")
+      .replace(/-s\s+\w+/g, "")
+      .trim();
+
     await handleCreateTask(name, type, status);
     return true;
   };
@@ -122,11 +125,18 @@ export function TaskComposerBar() {
         >
           <div className="flex items-start gap-2">
             <div className="min-w-0 flex-1">
-              <FormFieldInput
+              <FormFieldTextarea
                 form={taskForm}
                 name="command"
                 placeholder="Task name — optional: -t normal|critical -s pending|in_progress|done|archived — or send n / note for notes"
-                className="h-auto min-h-9 border-primary/20 bg-background/85 py-2 text-foreground shadow-inner shadow-primary/5 backdrop-blur focus-visible:border-primary/45 focus-visible:ring-2 focus-visible:ring-primary/25"
+                rows={1}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    e.currentTarget.form?.requestSubmit();
+                  }
+                }}
+                className="h-auto min-h-10 border-primary/20 bg-background/85 text-foreground shadow-inner shadow-primary/5 backdrop-blur focus-visible:border-primary/45 focus-visible:ring-2 focus-visible:ring-primary/25"
               />
             </div>
 
@@ -137,6 +147,7 @@ export function TaskComposerBar() {
                 !(taskForm.watch("command") ?? "").trim().length ||
                 isTaskActionInProgress
               }
+              className="mt-2"
             >
               {isTaskCreating ? (
                 <Loader2 className="animate-spin" size={18} />
