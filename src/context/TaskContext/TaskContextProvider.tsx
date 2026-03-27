@@ -10,8 +10,11 @@ import TaskService from "@/extension-services/task.services";
 import { isApiResponse } from "@/lib/typeGuard";
 import type { Task, TaskStatus, TaskType } from "@/types/task";
 import ApiError from "@/services/ApiError";
+import type ApiResponse from "@/services/ApiResponse";
 import { TaskContext } from "./TaskContext";
 import { useCategoryContext } from "../CategoryContext/CategoryContextProvider";
+
+export type TaskApiResult<T = unknown> = ApiResponse<T> | ApiError | unknown;
 
 export function TaskProvider({ children }: { children: ReactNode }) {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -21,6 +24,8 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
   const [isTaskMode, setIsTaskMode] = useState(true);
 
+
+
   const fetchTasksByCategory = useCallback(async (categoryId: string) => {
     setIsFetching(true);
     setTasks([]);
@@ -29,6 +34,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         await TaskService.getTasksByCategoryId<Task[]>(categoryId);
       if (isApiResponse(response)) {
         setTasks(Array.isArray(response.data) ? response.data : []);
+        return response;
       } else {
         const err = response as ApiError;
         toast.error(
@@ -36,10 +42,12 @@ export function TaskProvider({ children }: { children: ReactNode }) {
             err.errorMessage ||
             "Unable to fetch tasks",
         );
+        return response;
       }
     } catch (err) {
       toast.error((err as Error).message || "Unable to fetch tasks");
       setTasks([]);
+      return err;
     } finally {
       setIsFetching(false);
     }
@@ -61,7 +69,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
       type: TaskType,
       status: TaskStatus,
       categoryId: string,
-    ) => {
+    ): Promise<TaskApiResult<Task>> => {
       setIsCreating(true);
       try {
         const response = await TaskService.createTask<Task>(
@@ -73,6 +81,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         if (isApiResponse(response)) {
           setTasks((prev) => [...prev, response.data]);
           toast.success("Task created successfully");
+          return response;
         } else {
           const err = response as ApiError;
           toast.error(
@@ -80,9 +89,11 @@ export function TaskProvider({ children }: { children: ReactNode }) {
               err.errorMessage ||
               "Unable to create task",
           );
+          return response;
         }
       } catch (err) {
         toast.error((err as Error).message || "Unable to create task");
+        return err;
       } finally {
         setIsCreating(false);
       }
@@ -95,7 +106,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
       taskId: string,
       categoryId: string,
       updates: Partial<Pick<Task, "name" | "type" | "status">>,
-    ) => {
+    ): Promise<TaskApiResult<Task>> => {
       setUpdatingTaskId(taskId);
       try {
         const response = await TaskService.updateTask<Task>(
@@ -108,6 +119,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
             prev.map((task) => (task.id === taskId ? response.data : task)),
           );
           toast.success("Task updated successfully");
+          return response;
         } else {
           const err = response as ApiError;
           toast.error(
@@ -115,9 +127,11 @@ export function TaskProvider({ children }: { children: ReactNode }) {
               err.errorMessage ||
               "Unable to update task",
           );
+          return response;
         }
       } catch (err) {
         toast.error((err as Error).message || "Unable to update task");
+        return err;
       } finally {
         setUpdatingTaskId(null);
       }
@@ -126,7 +140,9 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   );
 
   const deleteTasks = useCallback(
-    async (taskIds: string[], categoryId: string) => {
+    async (taskIds: string[], categoryId: string): Promise<TaskApiResult<{
+      count: number;
+    }>> => {
       const primaryDeletingId = taskIds[0] ?? null;
       setDeletingTaskId(primaryDeletingId);
       try {
@@ -136,6 +152,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         if (isApiResponse(deleteResp)) {
           setTasks((prev) => prev.filter((task) => !taskIds.includes(task.id)));
           toast.success("Tasks deleted successfully");
+          return deleteResp;
         } else {
           const err = deleteResp as ApiError;
           toast.error(
@@ -143,9 +160,11 @@ export function TaskProvider({ children }: { children: ReactNode }) {
               err.errorMessage ||
               "Unable to delete tasks",
           );
+          return deleteResp;
         }
       } catch (err) {
         toast.error((err as Error).message || "Unable to delete tasks");
+        return err;
       } finally {
         setDeletingTaskId(null);
       }

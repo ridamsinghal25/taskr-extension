@@ -10,6 +10,7 @@ import NoteService from "@/extension-services/note.services";
 import { isApiResponse } from "@/lib/typeGuard";
 import type { Note } from "@/types/note";
 import ApiError from "@/services/ApiError";
+import type ApiResponse from "@/services/ApiResponse";
 import { NoteContext } from "./NoteContext";
 import { useCategoryContext } from "../CategoryContext/CategoryContextProvider";
 
@@ -35,6 +36,8 @@ export function NoteProvider({ children }: { children: ReactNode }) {
   const [updatingNoteId, setUpdatingNoteId] = useState<string | null>(null);
   const [isNoteComposerVisible, setIsNoteComposerVisible] = useState(false);
 
+  type NoteApiResult<T = unknown> = ApiResponse<T> | ApiError | unknown;
+
   const { currentCategoryId } = useCategoryContext();
 
   const fetchNotesByCategory = useCallback(async (categoryId: string) => {
@@ -46,6 +49,7 @@ export function NoteProvider({ children }: { children: ReactNode }) {
       if (isApiResponse(response)) {
         const list = Array.isArray(response.data) ? response.data : [];
         setNotes(list.map(normalizeNote));
+        return response;
       } else {
         const err = response as ApiError;
         toast.error(
@@ -53,10 +57,12 @@ export function NoteProvider({ children }: { children: ReactNode }) {
             err.errorMessage ||
             "Unable to fetch notes",
         );
+        return response;
       }
     } catch (err) {
       toast.error((err as Error).message || "Unable to fetch notes");
       setNotes([]);
+      return err;
     } finally {
       setIsFetching(false);
     }
@@ -71,7 +77,11 @@ export function NoteProvider({ children }: { children: ReactNode }) {
   }, [currentCategoryId, fetchNotesByCategory]);
 
   const createNote = useCallback(
-    async (title: string, content: string, categoryId: string) => {
+    async (
+      title: string,
+      content: string,
+      categoryId: string,
+    ): Promise<NoteApiResult<Note>> => {
       setIsCreating(true);
       try {
         const response = await NoteService.createNote<Note>(
@@ -82,6 +92,7 @@ export function NoteProvider({ children }: { children: ReactNode }) {
         if (isApiResponse(response)) {
           setNotes((prev) => [...prev, normalizeNote(response.data)]);
           toast.success("Note created successfully");
+          return response;
         } else {
           const err = response as ApiError;
           toast.error(
@@ -89,9 +100,11 @@ export function NoteProvider({ children }: { children: ReactNode }) {
               err.errorMessage ||
               "Unable to create note",
           );
+          return response;
         }
       } catch (err) {
         toast.error((err as Error).message || "Unable to create note");
+        return err;
       } finally {
         setIsCreating(false);
       }
@@ -104,7 +117,7 @@ export function NoteProvider({ children }: { children: ReactNode }) {
       noteId: string,
       updates: Partial<{ title: string; content: string }>,
       categoryId: string,
-    ): Promise<void> => {
+    ): Promise<NoteApiResult<Note>> => {
       setUpdatingNoteId(noteId);
       try {
         const response = await NoteService.updateNote<Note>(
@@ -121,6 +134,7 @@ export function NoteProvider({ children }: { children: ReactNode }) {
             ),
           );
           toast.success("Note updated successfully");
+          return response;
         } else {
           const err = response as ApiError;
           toast.error(
@@ -128,9 +142,11 @@ export function NoteProvider({ children }: { children: ReactNode }) {
               err.errorMessage ||
               "Unable to update note",
           );
+          return response;
         }
       } catch (err) {
         toast.error((err as Error).message || "Unable to update note");
+        return err;
       } finally {
         setUpdatingNoteId(null);
       }
@@ -139,7 +155,10 @@ export function NoteProvider({ children }: { children: ReactNode }) {
   );
 
   const deleteNotes = useCallback(
-    async (noteIds: string[], categoryId: string) => {
+    async (
+      noteIds: string[],
+      categoryId: string,
+    ): Promise<NoteApiResult<{ count: number }>> => {
       const primaryDeletingId = noteIds[0] ?? null;
       setDeletingNoteId(primaryDeletingId);
       try {
@@ -149,6 +168,7 @@ export function NoteProvider({ children }: { children: ReactNode }) {
         if (isApiResponse(deleteResp)) {
           setNotes((prev) => prev.filter((n) => !noteIds.includes(n.id)));
           toast.success("Notes deleted successfully");
+          return deleteResp;
         } else {
           const err = deleteResp as ApiError;
           toast.error(
@@ -156,9 +176,11 @@ export function NoteProvider({ children }: { children: ReactNode }) {
               err.errorMessage ||
               "Unable to delete notes",
           );
+          return deleteResp;
         }
       } catch (err) {
         toast.error((err as Error).message || "Unable to delete notes");
+        return err;
       } finally {
         setDeletingNoteId(null);
       }

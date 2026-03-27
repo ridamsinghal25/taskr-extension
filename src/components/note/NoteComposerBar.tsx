@@ -8,6 +8,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useNoteContext } from "@/context/NoteContext/NoteContextProvider";
+import { isApiResponse } from "@/lib/typeGuard";
 import { ClipboardList, Loader2, Send } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -85,8 +86,12 @@ export function NoteComposerBar({ onSwitchToTasks }: Props) {
     }
 
     setNoteError(null);
-    await createNote(t, c, categoryId);
-    return true;
+    const response = await createNote(t, c, categoryId);
+    if (isApiResponse(response)) {
+      return response.success;
+    } else {
+      return false;
+    }
   };
 
   const isNoteActionInProgress =

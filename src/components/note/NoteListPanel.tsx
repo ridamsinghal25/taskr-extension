@@ -12,6 +12,7 @@ import { useForm } from "react-hook-form";
 import { ConfirmActionDialog } from "../dialog/ConfirmActionDialog";
 import { useParams } from "react-router-dom";
 import FormFieldTextarea from "../basic/FormFieldTextarea";
+import { isApiResponse } from "@/lib/typeGuard";
 
 const fieldClass =
   "border-primary/20 bg-background/85 text-foreground shadow-inner shadow-primary/5 backdrop-blur focus-visible:border-primary/45 focus-visible:ring-2 focus-visible:ring-primary/25";
@@ -44,12 +45,6 @@ export function NoteListPanel() {
     editForm.reset({ title: "", content: "" });
   }, [categoryId]);
 
-  useEffect(() => {
-    if (!updatingNoteId) {
-      cancelEditing();
-    }
-  }, [updatingNoteId]);
-
   const notePendingDelete = useMemo(
     () =>
       noteIdToDelete ? notes.find((n) => n.id === noteIdToDelete) : undefined,
@@ -72,8 +67,8 @@ export function NoteListPanel() {
     editForm.reset({ title: "", content: "" });
   };
 
-  const onSaveEdit = async (data: NoteEditValues) => {
-    if (!categoryId || !editingNoteId) return;
+  const onSaveEdit = async (data: NoteEditValues): Promise<boolean> => {
+    if (!categoryId || !editingNoteId) return false;
 
     const title = data.title.trim();
     const content = data.content.trim();
@@ -83,7 +78,7 @@ export function NoteListPanel() {
         type: "manual",
         message: "Title is required.",
       });
-      return;
+      return false;
     }
 
     if (!content) {
@@ -91,11 +86,17 @@ export function NoteListPanel() {
         type: "manual",
         message: "Markdown content is required.",
       });
-      return;
+      return false;
     }
 
     editForm.clearErrors();
-   await updateNote(editingNoteId, { title, content }, categoryId);
+
+    const response = await updateNote(editingNoteId, { title, content }, categoryId);
+    if (isApiResponse(response)) {
+      return response.success;
+    } else {
+      return false;
+    }
   };
 
   return (
@@ -143,7 +144,11 @@ export function NoteListPanel() {
                       <Form {...editForm}>
                         <form
                           className="flex flex-col gap-2"
-                          onSubmit={editForm.handleSubmit(onSaveEdit)}
+                          onSubmit={editForm.handleSubmit((data) => onSaveEdit(data).then((success) => {
+                            if (success) {
+                              cancelEditing();
+                            }
+                          }))}
                         >
                           <FormFieldInput
                             form={editForm}

@@ -1,5 +1,9 @@
 import { createContext } from "react";
+import type ApiError from "@/services/ApiError";
+import type ApiResponse from "@/services/ApiResponse";
 import type { Task, TaskStatus, TaskType } from "@/types/task";
+
+type TaskApiResult<T = unknown> = ApiResponse<T> | ApiError | unknown;
 
 type TaskContextState = {
   tasks: Task[];
@@ -9,19 +13,22 @@ type TaskContextState = {
   deletingTaskId: string | null;
   isTaskMode: boolean;
   setIsTaskMode: (isTaskMode: boolean) => void;
-  fetchTasksByCategory: (categoryId: string) => Promise<void>;
+  fetchTasksByCategory: (categoryId: string) => Promise<TaskApiResult<Task[]>>;
   createTask: (
     name: string,
     type: TaskType,
     status: TaskStatus,
     categoryId: string,
-  ) => Promise<void>;
+  ) => Promise<TaskApiResult<Task>>;
   updateTask: (
     taskId: string,
     categoryId: string,
     updates: Partial<Pick<Task, "name" | "type" | "status">>,
-  ) => Promise<void>;
-  deleteTasks: (taskIds: string[], categoryId: string) => Promise<void>;
+  ) => Promise<TaskApiResult<Task>>;
+  deleteTasks: (
+    taskIds: string[],
+    categoryId: string,
+  ) => Promise<TaskApiResult<{ count: number }>>;
   handleTaskModeChange: (mode: "task" | "note") => Promise<boolean | void>;
 };
 

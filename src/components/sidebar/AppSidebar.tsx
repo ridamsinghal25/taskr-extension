@@ -26,6 +26,7 @@ import { Form } from "@/components/ui/form";
 import FormFieldInput from "@/components/basic/FormFieldInput";
 import { useForm } from "react-hook-form";
 import { useState, useMemo } from "react";
+import { isApiResponse } from "@/lib/typeGuard";
 
 const chatShellClass =
   "flex h-full w-full flex-col bg-linear-to-b from-primary/7 from-0% via-background via-45% to-blue-500/4 to-100% dark:from-primary/12 dark:via-background dark:to-blue-950/35";
@@ -85,21 +86,30 @@ export function AppSidebar() {
     setRenameDraft("");
   };
 
-  const commitRename = async (categoryId: string) => {
+  const commitRename = async (categoryId: string): Promise<boolean> => {
     const next = renameDraft.trim();
-    if (!next) return;
-    await updateCategory(categoryId, next);
-    cancelRename();
+    if (!next) return false;
+    const response = await updateCategory(categoryId, next);
+    if (isApiResponse(response)) {
+      cancelRename();
+      return response.success;
+    } else {
+      return false;
+    }
+
   };
 
-  const handleCreateCategory = async (values: { name: string }) => {
+  const handleCreateCategory = async (values: { name: string }): Promise<boolean> => {
     const name = values.name.trim();
 
-    if (!name) return;
+    if (!name) return false;
 
-    await createCategory(name);
-
-    createCategoryForm.reset({ name: "" });
+    const response = await createCategory(name);
+    if (isApiResponse(response)) {
+      return response.success;
+    } else {
+      return false;
+    }
   };
 
   const busy = isUpdating || isDeleting;
@@ -128,7 +138,11 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <Form {...createCategoryForm}>
                 <form
-                  onSubmit={createCategoryForm.handleSubmit(handleCreateCategory)}
+                  onSubmit={createCategoryForm.handleSubmit((data) => handleCreateCategory(data).then((success) => {
+                    if (success) {
+                      createCategoryForm.reset({ name: "" });
+                    }
+                  }))}
                   className="flex flex-col gap-2 rounded-xl border border-primary/20 bg-primary/5 p-2 shadow-sm shadow-primary/5 backdrop-blur-sm dark:bg-primary/10"
                 >
                   <FormFieldInput
@@ -195,7 +209,11 @@ export function AppSidebar() {
                                 onKeyDown={(e) => {
                                   if (e.key === "Enter") {
                                     e.preventDefault();
-                                    void commitRename(category.id);
+                                     commitRename(category.id).then((success) => {
+                                      if (success) {
+                                        setRenameDraft("");
+                                      }
+                                    });
                                   }
                                   if (e.key === "Escape") cancelRename();
                                 }}

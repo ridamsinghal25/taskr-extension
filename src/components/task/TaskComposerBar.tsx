@@ -1,20 +1,21 @@
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
-import { useTaskContext } from "@/context/TaskContext/TaskContextProvider";
+import { useTaskContext, type TaskApiResult } from "@/context/TaskContext/TaskContextProvider";
 import {
   isTaskStatusValue,
   isTaskTypeValue,
   TASK_STATUS_OPTIONS,
   TASK_TYPE_OPTIONS,
 } from "@/lib/task/task.constants";
-import { TaskStatus, TaskType } from "@/types/task";
+import { TaskStatus, TaskType, type Task } from "@/types/task";
 import { Loader2, Send } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useParams } from "react-router-dom";
 import FormFieldTextarea from "../basic/FormFieldTextarea";
+import { isApiResponse } from "@/lib/typeGuard";
 
-import '@mdxeditor/editor/style.css';
+
 export type TaskComposerValues = {
   command: string;
 };
@@ -46,9 +47,11 @@ export function TaskComposerBar() {
     name: string,
     type: TaskType,
     status: TaskStatus,
-  ) => {
+  ): Promise<TaskApiResult<Task>> => {
     if (!categoryId) return;
-    await createTask(name, type, status, categoryId);
+    const response = await createTask(name, type, status, categoryId);
+
+    return response;
   };
 
   const handleCommandSubmit = async (command: string): Promise<boolean> => {
@@ -103,8 +106,12 @@ export function TaskComposerBar() {
       .replace(/-s\s+\w+/g, "")
       .trim();
 
-    await handleCreateTask(name, type, status);
-    return true;
+    const response = await handleCreateTask(name, type, status);
+    if (isApiResponse(response)) {
+      return response.success;
+    } else {
+      return false;
+    }
   };
 
   const isTaskActionInProgress =

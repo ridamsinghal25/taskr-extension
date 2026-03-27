@@ -12,9 +12,11 @@ import { useTaskContext } from "@/context/TaskContext/TaskContextProvider";
 import { useParams } from "react-router-dom";
 import { ConfirmActionDialog } from "../dialog/ConfirmActionDialog";
 import { useMemo, useState } from "react";
+import { useEffect, useRef } from "react";
 
 export function TaskListPanel() {
   const [taskIdToDelete, setTaskIdToDelete] = useState<string | null>(null);
+  const bottomRef = useRef<HTMLDivElement | null>(null);
 
   const { categoryId } = useParams<{ categoryId?: string }>();
 
@@ -25,7 +27,12 @@ export function TaskListPanel() {
     isFetching: isTaskFetching,
     updateTask,
     deleteTasks,
+    isCreating
   } = useTaskContext();
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [isCreating]);
 
   const taskPendingDelete = useMemo(
     () =>
@@ -169,6 +176,8 @@ export function TaskListPanel() {
           </div>
         );
       })}
+
+      <div ref={bottomRef} />
 
       <ConfirmActionDialog
         open={taskIdToDelete !== null}
