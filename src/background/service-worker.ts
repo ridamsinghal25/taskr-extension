@@ -1,4 +1,5 @@
 import categoryService from "@/services/category.services";
+import imageKitService from "@/services/imageKit.services";
 import noteService from "@/services/note.services";
 import taskService from "@/services/task.services";
 import userService from "@/services/user.services";
@@ -60,6 +61,7 @@ async function handleMessage(message: any) {
         payload.type,
         payload.status,
         payload.categoryId,
+        payload.attachments,
       );
 
     case MessageType.GET_TASKS_BY_CATEGORY_ID:
@@ -151,6 +153,16 @@ async function handleMessage(message: any) {
 
     case MessageType.GET_CURRENT_USER:
       return userService.getCurrentUser();
+
+    /* ======================
+       IMAGEKIT
+    ====================== */
+
+    case MessageType.GET_IMAGEKIT_AUTH:
+      return imageKitService.fetchAuthParameters();
+
+    case MessageType.IMAGEKIT_BULK_DELETE:
+      return imageKitService.bulkDeleteFiles(payload.fileIds);
 
     default:
       return { error: "Unknown message type" };

@@ -42,4 +42,10 @@ export enum MessageType {
      USER
   ====================== */
   GET_CURRENT_USER = "GET_CURRENT_USER",
+
+  /* ======================
+     IMAGEKIT
+  ====================== */
+  GET_IMAGEKIT_AUTH = "GET_IMAGEKIT_AUTH",
+  IMAGEKIT_BULK_DELETE = "IMAGEKIT_BULK_DELETE",
 }
