@@ -1,6 +1,6 @@
 import { ExtensionAPI } from "@/lib/extensionApi";
 import { MessageType } from "@/types/message-types";
-import { TaskType, TaskStatus } from "@/types/task";
+import { TaskType, TaskStatus, type TaskAttachmentInput } from "@/types/task";
 import ApiError from "@/services/ApiError";
 import ApiResponse from "@/services/ApiResponse";
 
@@ -10,12 +10,14 @@ class TaskExtensionService {
     type: TaskType,
     status: TaskStatus,
     categoryId: string,
+    attachments?: TaskAttachmentInput[],
   ): Promise<ApiResponse<T> | ApiError> {
     return ExtensionAPI.send(MessageType.CREATE_TASK, {
       name,
       type,
       status,
       categoryId,
+      attachments: attachments ?? [],
     });
   }
 

@@ -8,7 +8,12 @@ import {
 import { toast } from "react-toastify";
 import TaskService from "@/extension-services/task.services";
 import { isApiResponse } from "@/lib/typeGuard";
-import type { Task, TaskStatus, TaskType } from "@/types/task";
+import type {
+  Task,
+  TaskAttachmentInput,
+  TaskStatus,
+  TaskType,
+} from "@/types/task";
 import ApiError from "@/services/ApiError";
 import type ApiResponse from "@/services/ApiResponse";
 import { TaskContext } from "./TaskContext";
@@ -69,6 +74,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
       type: TaskType,
       status: TaskStatus,
       categoryId: string,
+      attachments?: TaskAttachmentInput[],
     ): Promise<TaskApiResult<Task>> => {
       setIsCreating(true);
       try {
@@ -77,6 +83,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
           type,
           status,
           categoryId,
+          attachments,
         );
         if (isApiResponse(response)) {
           setTasks((prev) => [...prev, response.data]);

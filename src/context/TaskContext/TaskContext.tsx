@@ -1,7 +1,12 @@
 import { createContext } from "react";
 import type ApiError from "@/services/ApiError";
 import type ApiResponse from "@/services/ApiResponse";
-import type { Task, TaskStatus, TaskType } from "@/types/task";
+import type {
+  Task,
+  TaskAttachmentInput,
+  TaskStatus,
+  TaskType,
+} from "@/types/task";
 
 type TaskApiResult<T = unknown> = ApiResponse<T> | ApiError | unknown;
 
@@ -19,6 +24,7 @@ type TaskContextState = {
     type: TaskType,
     status: TaskStatus,
     categoryId: string,
+    attachments?: TaskAttachmentInput[],
   ) => Promise<TaskApiResult<Task>>;
   updateTask: (
     taskId: string,

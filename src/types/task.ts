@@ -15,9 +15,16 @@ export type Task = {
   name: string;
   type: TaskType;
   status: TaskStatus;
+  attachments: TaskAttachmentInput[];
   categoryId: string;
   createdAt: Date;
   updatedAt: Date;
+};
+
+/** ImageKit (or CDN) file metadata sent when creating a task. */
+export type TaskAttachmentInput = {
+  url: string;
+  fileId?: string;
 };
 
 export type DeleteTasks = {

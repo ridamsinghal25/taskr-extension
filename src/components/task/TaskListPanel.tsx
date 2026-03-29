@@ -53,6 +53,8 @@ export function TaskListPanel() {
     await deleteTasks([taskId], categoryId);
   };
 
+  console.log(tasks);
+
   return (
     <div className="flex flex-col gap-3 p-3 md:p-4">
       {!isTaskFetching && tasks.length === 0 && (
@@ -116,6 +118,21 @@ export function TaskListPanel() {
                 aria-busy={isRowBusy}
               >
                 <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    {/* Attachments */}
+                  {task?.attachments?.length > 0 && (
+                    <div className="mb-1 flex gap-2 overflow-x-auto">
+                      {task.attachments.map((attachment) => (
+                        <img
+                          key={attachment.url}
+                          src={attachment.url}
+                          alt="attachment"
+                          className="h-50 w-50 shrink-0 rounded-md border object-cover"
+                        />
+                      ))}
+                    </div>
+                  )}
+                  </div>
                   <p className="wrap-break-word text-sm whitespace-pre-wrap">{task.name}</p>
                   <p className="mt-1 text-xs opacity-80">
                     {format(new Date(task.createdAt), "EEE, MMM d")}

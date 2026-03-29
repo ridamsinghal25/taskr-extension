@@ -1,7 +1,7 @@
 import { isApiResponse } from "@/lib/typeGuard";
 import ApiError from "@/services/ApiError";
 import ApiRequest from "@/services/ApiRequest";
-import { TaskType, TaskStatus } from "@/types/task";
+import { TaskType, TaskStatus, type TaskAttachmentInput } from "@/types/task";
 import ApiResponse from "@/services/ApiResponse";
 
 class TaskService {
@@ -12,12 +12,18 @@ class TaskService {
     type: TaskType,
     status: TaskStatus,
     categoryId: string,
+    attachments?: TaskAttachmentInput[],
   ): Promise<ApiResponse<T> | ApiError> {
     const apiRequest = new ApiRequest(
       `${this.TASK_BASE_URL}?categoryId=${encodeURIComponent(categoryId)}`,
     );
 
-    const response = await apiRequest.postRequest<T>({ name, type, status });
+    const response = await apiRequest.postRequest<T>({
+      name,
+      type,
+      status,
+      attachments: attachments ?? [],
+    });
 
     if (isApiResponse(response)) {
       return response;
