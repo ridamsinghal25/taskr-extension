@@ -10,6 +10,7 @@ import { TaskComposerBar } from "@/components/task/TaskComposerBar";
 import { NoteListPanel } from "@/components/note/NoteListPanel";
 import { NoteComposerBar } from "@/components/note/NoteComposerBar";
 import type { Note } from "@/types/note";
+import type { TaskLocalSaveHandlers } from "@/lib/task/localSavedTasks.storage";
 
 export type ComposerMode = "task" | "note";
 
@@ -22,6 +23,7 @@ type Props = {
   isNoteFetching: boolean;
   isTaskMode: boolean;
   setIsTaskMode: (isTaskMode: boolean) => void;
+  taskLocalSave: TaskLocalSaveHandlers;
 };
 
 export function Workspace({
@@ -33,6 +35,7 @@ export function Workspace({
   isNoteFetching,
   isTaskMode,
   setIsTaskMode,
+  taskLocalSave,
 }: Props) {
   const isLoadingContent = isTaskMode ? isTaskFetching : isNoteFetching;
 
@@ -144,7 +147,11 @@ export function Workspace({
         </div>
 
         <ScrollArea className="flex-1 overflow-hidden">
-          {isTaskMode ? <TaskListPanel /> : <NoteListPanel />}
+          {isTaskMode ? (
+            <TaskListPanel taskLocalSave={taskLocalSave} />
+          ) : (
+            <NoteListPanel />
+          )}
         </ScrollArea>
 
         {isTaskMode ? (

@@ -13,8 +13,15 @@ import { useParams } from "react-router-dom";
 import { ConfirmActionDialog } from "../dialog/ConfirmActionDialog";
 import { useMemo, useState } from "react";
 import { useEffect, useRef } from "react";
+import type { TaskLocalSaveHandlers } from "@/lib/task/localSavedTasks.storage";
+import { isApiResponse } from "@/lib/typeGuard";
+import { Input } from "../ui/input";
 
-export function TaskListPanel() {
+type Props = {
+  taskLocalSave: TaskLocalSaveHandlers;
+};
+
+export function TaskListPanel({ taskLocalSave }: Props) {
   const [taskIdToDelete, setTaskIdToDelete] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
@@ -50,10 +57,11 @@ export function TaskListPanel() {
 
   const handleDeleteTask = async (taskId: string) => {
     if (!categoryId) return;
-    await deleteTasks([taskId], categoryId);
+    const result = await deleteTasks([taskId], categoryId);
+    if (isApiResponse(result)) {
+      taskLocalSave.removeTaskFromBrowserSave(taskId);
+    }
   };
-
-  console.log(tasks);
 
   return (
     <div className="flex flex-col gap-3 p-3 md:p-4">
@@ -117,6 +125,23 @@ export function TaskListPanel() {
                 className={`flex items-center gap-3 rounded-2xl bg-primary/80 px-4 py-3 text-primary-foreground shadow-md transition ${isRowBusy ? "opacity-90" : "hover:shadow-lg"}`}
                 aria-busy={isRowBusy}
               >
+                <label
+                  className={`flex shrink-0 flex-col items-center gap-0.5 ${isRowBusy ? "pointer-events-none opacity-50" : "cursor-pointer"}`}
+                  title="Save this task in browser storage"
+                >
+                  <Input
+                    type="checkbox"
+                    checked={taskLocalSave.isTaskSavedInBrowser(task.id)}
+                    onChange={(e) =>
+                      taskLocalSave.toggleSaveTaskInBrowser(
+                        task,
+                        e.target.checked,
+                      )
+                    }
+                    disabled={isRowBusy}
+                    className="size-4 rounded border-primary-foreground/40 bg-primary-foreground/10 accent-primary-foreground"
+                  />
+                </label>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     {/* Attachments */}
