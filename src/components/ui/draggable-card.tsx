@@ -5,7 +5,6 @@ import React, {
   useState,
   useEffect,
   createContext,
-  useContext,
 } from "react";
 import {
   motion,
@@ -32,7 +31,6 @@ export const DraggableCardBody = ({
   children?: React.ReactNode;
   index?: number;
 }) => {
-  const containerRef = useContext(DragContainerContext);
   const cardRef      = useRef<HTMLDivElement>(null);
   const controls     = useAnimationControls();
 
