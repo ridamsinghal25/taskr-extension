@@ -1,7 +1,7 @@
 import DraggableCardDemo from "@/components/home/DraggableCards";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import TaskrIcon from "../../../public/taskr.svg";
+import TaskrIcon from "@/assets/taskr.svg";
 
 export function HomePage() {
 
