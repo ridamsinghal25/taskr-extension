@@ -11,10 +11,32 @@ import {
   deleteSavedTasksMap,
 } from "@/lib/task/localSavedTasks.storage";
 
-export function WorkspaceContainer() {
-  let { categoryId } = useParams<{ categoryId?: string }>();
+/** Stable JSON for comparing API tasks with tasks rehydrated from localStorage. */
+function taskPayloadJson(task: Task): string {
+  const createdAt =
+    task.createdAt instanceof Date
+      ? task.createdAt.toISOString()
+      : String(task.createdAt);
+  const updatedAt =
+    task.updatedAt instanceof Date
+      ? task.updatedAt.toISOString()
+      : String(task.updatedAt);
+  return JSON.stringify({
+    id: String(task.id),
+    name: task.name,
+    type: task.type,
+    status: task.status,
+    categoryId: task.categoryId,
+    createdAt,
+    updatedAt,
+    attachments: task.attachments ?? [],
+  });
+}
 
-  const { setCurrentCategoryId } = useCategoryContext();
+export function WorkspaceContainer() {
+  const { categoryId } = useParams<{ categoryId?: string }>();
+
+  const { setCurrentCategoryId, currentCategoryId } = useCategoryContext();
 
   const {
     tasks,
@@ -28,7 +50,7 @@ export function WorkspaceContainer() {
   const { categories } = useCategoryContext();
 
   const [savedTasksById, setSavedTasksById] = useState<Record<string, Task>>(
-    {},
+    () => (categoryId ? readSavedTasksMap(categoryId) : {}),
   );
 
   useEffect(() => {
@@ -48,7 +70,7 @@ export function WorkspaceContainer() {
   }, [categoryId]);
 
   const isTaskSavedInBrowser = useCallback(
-    (taskId: string) => taskId in savedTasksById,
+    (taskId: string) => Object.hasOwn(savedTasksById, String(taskId)),
     [savedTasksById],
   );
 
@@ -56,14 +78,14 @@ export function WorkspaceContainer() {
     (task: Task, checked: boolean) => {
       if (!categoryId) return;
 
-      let next;
+      const id = String(task.id);
 
       setSavedTasksById((prev) => {
-        next = { ...prev };
+        const next = { ...prev };
         if (checked) {
-          next[task.id] = task;
+          next[id] = task;
         } else {
-          delete next[task.id];
+          delete next[id];
         }
 
         if (Object.keys(next).length > 0) {
@@ -82,11 +104,13 @@ export function WorkspaceContainer() {
     (taskId: string) => {
       if (!categoryId) return;
 
+      const id = String(taskId);
+
       setSavedTasksById((prev) => {
-        if (!(taskId in prev)) return prev;
+        if (!(id in prev)) return prev;
 
         const next = { ...prev };
-        delete next[taskId];
+        delete next[id];
 
         if (Object.keys(next).length > 0) {
           writeSavedTasksMap(categoryId, next);
@@ -100,34 +124,34 @@ export function WorkspaceContainer() {
     [categoryId],
   );
 
+  /* Refresh stored copies when the server task changes. Do NOT drop saved ids
+     just because the live list is empty or differs (fetch errors, races, id
+     shape) — that was clearing localStorage when reopening a category. */
   useEffect(() => {
     if (!categoryId || isTaskFetching) return;
-    const taskIds = new Set(tasks.map((t) => t.id));
+    if (currentCategoryId !== categoryId) return;
+    if (tasks.length === 0) return;
+
     setSavedTasksById((prev) => {
-      const savedIds = Object.keys(prev);
-      if (savedIds.length === 0) return prev;
-      let next = { ...prev };
+      if (Object.keys(prev).length === 0) return prev;
+
+      const next = { ...prev };
       let changed = false;
-      for (const id of savedIds) {
-        if (!taskIds.has(id)) {
-          delete next[id];
+
+      for (const task of tasks) {
+        const id = String(task.id);
+        if (!id || id === "undefined") continue;
+        if (id in prev && taskPayloadJson(prev[id]) !== taskPayloadJson(task)) {
+          next[id] = task;
           changed = true;
         }
       }
-      for (const task of tasks) {
-        if (task.id in prev) {
-          if (JSON.stringify(prev[task.id]) !== JSON.stringify(task)) {
-            next[task.id] = task;
-            changed = true;
-          }
-        }
-      }
-      if (changed && Object.keys(next).length > 0) {
+      if (changed) {
         writeSavedTasksMap(categoryId, next);
       }
       return changed ? next : prev;
     });
-  }, [tasks, categoryId, isTaskFetching]);
+  }, [tasks, categoryId, isTaskFetching, currentCategoryId]);
 
   return (
     <>

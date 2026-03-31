@@ -17,11 +17,21 @@ export function readSavedTasksMap(categoryId: string): Record<string, Task> {
     const raw = localStorage.getItem(savedTasksStorageKey(categoryId));
     if (!raw) return {};
     const parsed = JSON.parse(raw) as Record<string, Task>;
-    return parsed && typeof parsed === "object" ? parsed : {};
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return {};
+    }
+    const out: Record<string, Task> = {};
+    for (const [key, task] of Object.entries(parsed)) {
+      if (task != null && typeof task === "object") {
+        out[String(key)] = task as Task;
+      }
+    }
+    return out;
   } catch {
     return {};
   }
 }
+
 
 export function writeSavedTasksMap(
   categoryId: string,

@@ -6,8 +6,9 @@ import {
   TASK_TYPE_OPTIONS,
 } from "@/lib/task/task.constants";
 import { format } from "date-fns";
-import { Inbox, Loader2, Trash2 } from "lucide-react";
+import { Bookmark, BookmarkCheck, Inbox, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { useTaskContext } from "@/context/TaskContext/TaskContextProvider";
 import { useParams } from "react-router-dom";
 import { ConfirmActionDialog } from "../dialog/ConfirmActionDialog";
@@ -15,7 +16,6 @@ import { useMemo, useState } from "react";
 import { useEffect, useRef } from "react";
 import type { TaskLocalSaveHandlers } from "@/lib/task/localSavedTasks.storage";
 import { isApiResponse } from "@/lib/typeGuard";
-import { Input } from "../ui/input";
 
 type Props = {
   taskLocalSave: TaskLocalSaveHandlers;
@@ -97,6 +97,7 @@ export function TaskListPanel({ taskLocalSave }: Props) {
         const isUpdatingThis = updatingTaskId === task.id;
         const isDeletingThis = deletingTaskId === task.id;
         const isRowBusy = isUpdatingThis || isDeletingThis;
+        const isSavedInBrowser = taskLocalSave.isTaskSavedInBrowser(task.id);
 
         return (
           <div key={task.id} className="mb-6 flex justify-end">
@@ -126,12 +127,22 @@ export function TaskListPanel({ taskLocalSave }: Props) {
                 aria-busy={isRowBusy}
               >
                 <label
-                  className={`flex shrink-0 flex-col items-center gap-0.5 ${isRowBusy ? "pointer-events-none opacity-50" : "cursor-pointer"}`}
-                  title="Save this task in browser storage"
+                  className={cn(
+                    "group relative flex shrink-0 flex-col items-center gap-1",
+                    isRowBusy
+                      ? "pointer-events-none opacity-50"
+                      : "cursor-pointer",
+                  )}
+                  title={
+                    isSavedInBrowser
+                      ? "Saved in this browser — click to remove"
+                      : "Save a copy of this task in this browser"
+                  }
                 >
-                  <Input
+                  <input
                     type="checkbox"
-                    checked={taskLocalSave.isTaskSavedInBrowser(task.id)}
+                    className="peer sr-only"
+                    checked={isSavedInBrowser}
                     onChange={(e) =>
                       taskLocalSave.toggleSaveTaskInBrowser(
                         task,
@@ -139,8 +150,40 @@ export function TaskListPanel({ taskLocalSave }: Props) {
                       )
                     }
                     disabled={isRowBusy}
-                    className="size-4 rounded border-primary-foreground/40 bg-primary-foreground/10 accent-primary-foreground"
+                    aria-label={
+                      isSavedInBrowser
+                        ? "Saved in browser, remove from saved"
+                        : "Save task in browser"
+                    }
                   />
+                  <span
+                    className={cn(
+                      "flex h-9 w-9 items-center justify-center rounded-xl border shadow-sm transition-[color,background-color,border-color,transform]",
+                      "border-primary-foreground/40 bg-primary-foreground/12",
+                      "peer-focus-visible:ring-2 peer-focus-visible:ring-primary-foreground/55 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-primary/80",
+                      "peer-disabled:cursor-not-allowed",
+                      "peer-checked:border-primary-foreground/75 peer-checked:bg-primary-foreground/25 peer-checked:shadow-md",
+                      !isRowBusy &&
+                        "group-active:scale-95 group-hover:bg-primary-foreground/18",
+                    )}
+                  >
+                    {isSavedInBrowser ? (
+                      <BookmarkCheck
+                        className="size-[18px] text-primary-foreground"
+                        strokeWidth={2}
+                        aria-hidden
+                      />
+                    ) : (
+                      <Bookmark
+                        className="size-[18px] text-primary-foreground/85"
+                        strokeWidth={2}
+                        aria-hidden
+                      />
+                    )}
+                  </span>
+                  <span className="max-w-13 text-center text-[10px] font-semibold uppercase tracking-wide text-primary-foreground/90">
+                    {isSavedInBrowser ? "Saved" : "Save"}
+                  </span>
                 </label>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
