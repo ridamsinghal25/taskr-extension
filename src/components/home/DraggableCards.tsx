@@ -9,6 +9,8 @@ import { getCachedCategories } from "@/lib/category/categoryLocalStorage";
 import { readSavedTasksMap } from "@/lib/task/localSavedTasks.storage";
 import type { Category } from "@/types/category";
 import { TaskStatus, TaskType, type Task } from "@/types/task";
+import { Link } from "react-router-dom";
+import ROUTES from "@/constants/routes";
 
 // ─── Color palette assigned per card index ────────────────────────────────────
 const CARD_THEMES = [
@@ -100,20 +102,22 @@ function CategoryCard({
         <div className="p-4">
 
           {/* Header */}
-          <div className="flex items-center justify-between mb-3">
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold"
-              style={{ background: theme.iconBg, color: theme.iconColor }}
-            >
-              {getCategoryInitial(category.name)}
+          <Link to={`${ROUTES.WORKSPACE}/${ROUTES.WORKSPACE_CATEGORIES.replace(":categoryId", category.id)}`}>
+            <div className="flex items-center justify-between mb-3 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg p-2 cursor-pointer">
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold"
+                style={{ background: theme.iconBg, color: theme.iconColor }}
+              >
+                {getCategoryInitial(category.name)}
+              </div>
+              <span
+                className="text-[11px] font-medium px-2 py-0.5 rounded-full"
+                style={{ background: theme.iconBg, color: theme.iconColor }}
+              >
+                {total} {total === 1 ? "task" : "tasks"}
+              </span>
             </div>
-            <span
-              className="text-[11px] font-medium px-2 py-0.5 rounded-full"
-              style={{ background: theme.iconBg, color: theme.iconColor }}
-            >
-              {total} {total === 1 ? "task" : "tasks"}
-            </span>
-          </div>
+          </Link>
 
           {/* Category name + created date */}
           <h3 className="text-sm font-semibold text-neutral-800 dark:text-neutral-100 leading-tight">

@@ -1,9 +1,26 @@
 import DraggableCardDemo from "@/components/home/DraggableCards";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import TaskrIcon from "@/assets/taskr.svg";
+import { useEffect } from "react";
+import ROUTES from "@/constants/routes";
 
 export function HomePage() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Enter" && e.shiftKey) {
+        navigate(ROUTES.WORKSPACE);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [navigate]);
 
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-hidden bg-[#f7f7f5] dark:bg-neutral-950">
