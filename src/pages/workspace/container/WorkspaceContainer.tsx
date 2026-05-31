@@ -3,7 +3,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Workspace } from "../presentation/Workspace";
 import { useTaskContext } from "@/context/TaskContext/TaskContextProvider";
 import { useCategoryContext } from "@/context/CategoryContext/CategoryContextProvider";
-import { TaskStatus } from "@/types/task";
 import { getCategoryColor } from "@/lib/utils";
 import { ConfirmActionDialog } from "@/components/dialog/ConfirmActionDialog";
 
@@ -14,7 +13,7 @@ export function WorkspaceContainer() {
   const { setCurrentCategoryId, categories, deleteCategories } =
     useCategoryContext();
 
-  const { tasks, isFetching: isTaskFetching } = useTaskContext();
+  const { isFetching: isTaskFetching } = useTaskContext();
 
   const [deleteCategoryOpen, setDeleteCategoryOpen] = useState(false);
 
@@ -26,12 +25,6 @@ export function WorkspaceContainer() {
     () => categories.find((c) => c.id === categoryId),
     [categories, categoryId],
   );
-
-  const donePct = useMemo(() => {
-    const visible = tasks.filter((t) => t.status !== TaskStatus.Archived);
-    const done = visible.filter((t) => t.status === TaskStatus.Done).length;
-    return visible.length > 0 ? Math.round((done / visible.length) * 100) : 0;
-  }, [tasks]);
 
   const accentColor = categoryId ? getCategoryColor(categoryId) : "#6366f1";
 
@@ -48,7 +41,7 @@ export function WorkspaceContainer() {
         categoryId={categoryId as string}
         categoryName={category?.name ?? ""}
         isTaskFetching={isTaskFetching}
-        donePct={donePct}
+        donePct={category?.completionPercentage ?? 0}
         accentColor={accentColor}
         onDeleteCategory={() => setDeleteCategoryOpen(true)}
       />

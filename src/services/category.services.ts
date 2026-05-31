@@ -61,20 +61,6 @@ class CategoryService {
     return response;
   }
 
-  async getCategoriesByIds<T>(
-    categoryIds: string[],
-  ): Promise<ApiResponse<T> | ApiError> {
-    const apiRequest = new ApiRequest(`${this.CATEGORY_BASE_URL}/bulk-get`);
-
-    const response = await apiRequest.postRequest<T>({ categoryIds });
-
-    if (isApiResponse(response)) {
-      return response;
-    }
-
-    return response;
-  }
-
   async getCategoriesByName<T>(
     categoryNames: string[],
   ): Promise<ApiResponse<T> | ApiError> {

@@ -8,7 +8,7 @@ import {
 import { toast } from "react-toastify";
 import CategoryService from "@/extension-services/category.services";
 import { isApiResponse } from "@/lib/typeGuard";
-import type { Category } from "@/types/category";
+import type { Category, GetCategoriesResponse } from "@/types/category";
 import {
   clearCategoryCache,
   getCachedCategories,
@@ -19,7 +19,7 @@ import type ApiResponse from "@/services/ApiResponse";
 import { CategoryContext } from "./CategoryContext";
 
 export function CategoryProvider({ children }: { children: ReactNode }) {
-  const [categories, setCategories] = useState<Category[]>(() => {
+  const [categories, setCategories] = useState<GetCategoriesResponse[]>(() => {
     return getCachedCategories() ?? [];
   });
   const [currentCategoryId, setCurrentCategoryId] = useState<string | null>(
@@ -43,7 +43,8 @@ export function CategoryProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const response = await CategoryService.getCategories<Category[]>();
+      const response =
+        await CategoryService.getCategories<GetCategoriesResponse[]>();
       if (isApiResponse(response)) {
         const next = Array.isArray(response.data) ? response.data : [];
         setCategories(next);
@@ -67,6 +68,21 @@ export function CategoryProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const refreshCategories = useCallback(async () => {
+    clearCategoryCache();
+    try {
+      const response =
+        await CategoryService.getCategories<GetCategoriesResponse[]>();
+      if (isApiResponse(response)) {
+        const next = Array.isArray(response.data) ? response.data : [];
+        setCategories(next);
+        setCachedCategories(next);
+      }
+    } catch {
+      // Task mutations already succeeded; avoid extra toasts on background refresh.
+    }
+  }, []);
+
   useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
@@ -77,7 +93,13 @@ export function CategoryProvider({ children }: { children: ReactNode }) {
       try {
         const response = await CategoryService.createCategory<Category>(name);
         if (isApiResponse(response)) {
-          setCategories((prev) => [...prev, response.data]);
+          const created: GetCategoriesResponse = {
+            ...response.data,
+            totalDoneTasks: 0,
+            totalNonArchivedTasks: 0,
+            completionPercentage: 0,
+          };
+          setCategories((prev) => [...prev, created]);
           clearCategoryCache();
           toast.success("Category created successfully");
           return response;
@@ -115,7 +137,9 @@ export function CategoryProvider({ children }: { children: ReactNode }) {
         if (isApiResponse(response)) {
           setCategories((prev) =>
             prev.map((category) =>
-              category.id === categoryId ? response.data : category,
+              category.id === categoryId
+                ? { ...category, ...response.data }
+                : category,
             ),
           );
           toast.success("Category updated successfully");
@@ -174,31 +198,6 @@ export function CategoryProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const getCategoriesByIds = useCallback(async (categoryIds: string[]) => {
-    setIsFetching(true);
-    try {
-      const response =
-        await CategoryService.getCategoriesByIds<Category[]>(categoryIds);
-      if (isApiResponse(response)) {
-        setCategories(Array.isArray(response.data) ? response.data : []);
-        return response;
-      } else {
-        const err = response as ApiError;
-        toast.error(
-          err.errorResponse?.message ||
-            err.errorMessage ||
-            "Unable to get categories by ids",
-        );
-        return response;
-      }
-    } catch (err) {
-      toast.error((err as Error).message || "Unable to get categories by ids");
-      return err;
-    } finally {
-      setIsFetching(false);
-    }
-  }, []);
-
   return (
     <CategoryContext.Provider
       value={{
@@ -210,10 +209,10 @@ export function CategoryProvider({ children }: { children: ReactNode }) {
         currentCategoryId,
         setCurrentCategoryId,
         fetchCategories,
+        refreshCategories,
         createCategory,
         updateCategory,
         deleteCategories,
-        getCategoriesByIds,
       }}
     >
       {children}

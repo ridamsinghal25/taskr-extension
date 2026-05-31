@@ -1,4 +1,4 @@
-import type { Category } from "@/types/category";
+import type { GetCategoriesResponse } from "@/types/category";
 
 import {
   getLocalStorageJSON,
@@ -12,13 +12,16 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function reviveCategory(raw: unknown): Category | null {
+function reviveCategory(raw: unknown): GetCategoriesResponse | null {
   if (!isRecord(raw)) return null;
   const { id, name, userId, createdAt, updatedAt } = raw;
   if (
     typeof id !== "string" ||
     typeof name !== "string" ||
-    typeof userId !== "string"
+    typeof userId !== "string" ||
+    typeof raw.totalDoneTasks !== "number" ||
+    typeof raw.totalNonArchivedTasks !== "number" ||
+    typeof raw.completionPercentage !== "number"
   ) {
     return null;
   }
@@ -33,18 +36,27 @@ function reviveCategory(raw: unknown): Category | null {
   if (Number.isNaN(created.getTime()) || Number.isNaN(updated.getTime())) {
     return null;
   }
-  return { id, name, userId, createdAt: created, updatedAt: updated };
+  return {
+    id,
+    name,
+    userId,
+    createdAt: created,
+    updatedAt: updated,
+    totalDoneTasks: raw.totalDoneTasks,
+    totalNonArchivedTasks: raw.totalNonArchivedTasks,
+    completionPercentage: raw.completionPercentage,
+  };
 }
 
-export function getCachedCategories(): Category[] | null {
+export function getCachedCategories(): GetCategoriesResponse[] | null {
   const parsed = getLocalStorageJSON<unknown>(CATEGORY_CACHE_KEY);
   if (!Array.isArray(parsed)) return null;
   return parsed
     .map(reviveCategory)
-    .filter((c): c is Category => c !== null);
+    .filter((c): c is GetCategoriesResponse => c !== null);
 }
 
-export function setCachedCategories(categories: Category[]): void {
+export function setCachedCategories(categories: GetCategoriesResponse[]): void {
   setLocalStorageJSON(CATEGORY_CACHE_KEY, categories);
 }
 

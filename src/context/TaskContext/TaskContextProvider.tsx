@@ -58,7 +58,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const { currentCategoryId } = useCategoryContext();
+  const { currentCategoryId, refreshCategories } = useCategoryContext();
 
   useEffect(() => {
     if (currentCategoryId) {
@@ -87,6 +87,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         );
         if (isApiResponse(response)) {
           setTasks((prev) => [...prev, response.data]);
+          void refreshCategories();
           toast.success("Task created successfully");
           return response;
         } else {
@@ -105,7 +106,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         setIsCreating(false);
       }
     },
-    [],
+    [refreshCategories],
   );
 
   const updateTask = useCallback(
@@ -125,6 +126,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
           setTasks((prev) =>
             prev.map((task) => (task.id === taskId ? response.data : task)),
           );
+          void refreshCategories();
           toast.success("Task updated successfully");
           return response;
         } else {
@@ -143,7 +145,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         setUpdatingTaskId(null);
       }
     },
-    [],
+    [refreshCategories],
   );
 
   const deleteTasks = useCallback(
@@ -158,6 +160,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         }>(taskIds, categoryId);
         if (isApiResponse(deleteResp)) {
           setTasks((prev) => prev.filter((task) => !taskIds.includes(task.id)));
+          void refreshCategories();
           toast.success("Tasks deleted successfully");
           return deleteResp;
         } else {
@@ -176,7 +179,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         setDeletingTaskId(null);
       }
     },
-    [],
+    [refreshCategories],
   );
 
   const handleTaskModeChange = async (

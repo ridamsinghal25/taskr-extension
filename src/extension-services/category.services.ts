@@ -30,14 +30,6 @@ class CategoryExtensionService {
     });
   }
 
-  async getCategoriesByIds<T>(
-    categoryIds: string[],
-  ): Promise<ApiResponse<T> | ApiError> {
-    return ExtensionAPI.send(MessageType.GET_CATEGORIES_BY_IDS, {
-      ids: categoryIds,
-    });
-  }
-
   async getCategoriesByName<T>(
     categoryNames: string[],
   ): Promise<ApiResponse<T> | ApiError> {

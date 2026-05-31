@@ -1,19 +1,20 @@
 import { createContext } from "react";
 import type ApiError from "@/services/ApiError";
 import type ApiResponse from "@/services/ApiResponse";
-import type { Category } from "@/types/category";
+import type { Category, GetCategoriesResponse } from "@/types/category";
 
 type CategoryApiResult<T = unknown> = ApiResponse<T> | ApiError | unknown;
 
 type CategoryContextState = {
-  categories: Category[];
+  categories: GetCategoriesResponse[];
   isFetching: boolean;
   isCreating: boolean;
   isUpdating: boolean;
   isDeleting: boolean;
   currentCategoryId: string | null;
   setCurrentCategoryId: (categoryId: string | null) => void;
-  fetchCategories: () => Promise<CategoryApiResult<Category[]>>;
+  fetchCategories: () => Promise<CategoryApiResult<GetCategoriesResponse[]>>;
+  refreshCategories: () => Promise<void>;
   createCategory: (name: string) => Promise<CategoryApiResult<Category>>;
   updateCategory: (
     categoryId: string,
@@ -22,9 +23,6 @@ type CategoryContextState = {
   deleteCategories: (
     categoryIds: string[],
   ) => Promise<CategoryApiResult<{ count: number }>>;
-  getCategoriesByIds: (
-    categoryIds: string[],
-  ) => Promise<CategoryApiResult<Category[]>>;
 };
 
 export const CategoryContext = createContext<CategoryContextState | undefined>(

@@ -36,9 +36,6 @@ async function handleMessage(message: any) {
     case MessageType.DELETE_CATEGORIES:
       return categoryService.deleteCategories(payload.ids);
 
-    case MessageType.GET_CATEGORIES_BY_IDS:
-      return categoryService.getCategoriesByIds(payload.ids);
-
     case MessageType.GET_CATEGORIES_BY_NAME:
       return categoryService.getCategoriesByName(payload.names);
 
