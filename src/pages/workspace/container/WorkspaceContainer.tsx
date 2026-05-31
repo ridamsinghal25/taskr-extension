@@ -1,174 +1,73 @@
-import { useCallback, useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { Workspace } from "../presentation/Workspace";
 import { useTaskContext } from "@/context/TaskContext/TaskContextProvider";
-import { useNoteContext } from "@/context/NoteContext/NoteContextProvider";
 import { useCategoryContext } from "@/context/CategoryContext/CategoryContextProvider";
-import type { Task } from "@/types/task";
-import {
-  readSavedTasksMap,
-  writeSavedTasksMap,
-  deleteSavedTasksMap,
-} from "@/lib/task/localSavedTasks.storage";
-
-/** Stable JSON for comparing API tasks with tasks rehydrated from localStorage. */
-function taskPayloadJson(task: Task): string {
-  const createdAt =
-    task.createdAt instanceof Date
-      ? task.createdAt.toISOString()
-      : String(task.createdAt);
-  const updatedAt =
-    task.updatedAt instanceof Date
-      ? task.updatedAt.toISOString()
-      : String(task.updatedAt);
-  return JSON.stringify({
-    id: String(task.id),
-    name: task.name,
-    type: task.type,
-    status: task.status,
-    categoryId: task.categoryId,
-    createdAt,
-    updatedAt,
-    attachments: task.attachments ?? [],
-  });
-}
+import { TaskStatus } from "@/types/task";
+import { getCategoryColor } from "@/lib/utils";
+import { ConfirmActionDialog } from "@/components/dialog/ConfirmActionDialog";
 
 export function WorkspaceContainer() {
   const { categoryId } = useParams<{ categoryId?: string }>();
+  const navigate = useNavigate();
 
-  const { setCurrentCategoryId, currentCategoryId } = useCategoryContext();
+  const { setCurrentCategoryId, categories, deleteCategories } =
+    useCategoryContext();
 
-  const {
-    tasks,
-    isFetching: isTaskFetching,
-    isTaskMode,
-    setIsTaskMode,
-  } = useTaskContext();
+  const { tasks, isFetching: isTaskFetching } = useTaskContext();
 
-  const { notes, isFetching: isNoteFetching } = useNoteContext();
-
-  const { categories } = useCategoryContext();
-
-  const [savedTasksById, setSavedTasksById] = useState<Record<string, Task>>(
-    () => (categoryId ? readSavedTasksMap(categoryId) : {}),
-  );
+  const [deleteCategoryOpen, setDeleteCategoryOpen] = useState(false);
 
   useEffect(() => {
-    if (categoryId) {
-      setCurrentCategoryId(categoryId);
-    } else {
-      setCurrentCategoryId(null);
-    }
+    setCurrentCategoryId(categoryId ?? null);
   }, [categoryId, setCurrentCategoryId]);
 
-  useEffect(() => {
-    if (!categoryId) {
-      setSavedTasksById({});
-      return;
-    }
-    setSavedTasksById(readSavedTasksMap(categoryId));
-  }, [categoryId]);
-
-  const isTaskSavedInBrowser = useCallback(
-    (taskId: string) => Object.hasOwn(savedTasksById, String(taskId)),
-    [savedTasksById],
+  const category = useMemo(
+    () => categories.find((c) => c.id === categoryId),
+    [categories, categoryId],
   );
 
-  const toggleSaveTaskInBrowser = useCallback(
-    (task: Task, checked: boolean) => {
-      if (!categoryId) return;
+  const donePct = useMemo(() => {
+    const visible = tasks.filter((t) => t.status !== TaskStatus.Archived);
+    const done = visible.filter((t) => t.status === TaskStatus.Done).length;
+    return visible.length > 0 ? Math.round((done / visible.length) * 100) : 0;
+  }, [tasks]);
 
-      const id = String(task.id);
+  const accentColor = categoryId ? getCategoryColor(categoryId) : "#6366f1";
 
-      setSavedTasksById((prev) => {
-        const next = { ...prev };
-        if (checked) {
-          next[id] = task;
-        } else {
-          delete next[id];
-        }
-
-        if (Object.keys(next).length > 0) {
-          writeSavedTasksMap(categoryId, next);
-        } else {
-          deleteSavedTasksMap(categoryId);
-        }
-        return next;
-      });
-
-    },
-    [categoryId],
-  );
-
-  const removeTaskFromBrowserSave = useCallback(
-    (taskId: string) => {
-      if (!categoryId) return;
-
-      const id = String(taskId);
-
-      setSavedTasksById((prev) => {
-        if (!(id in prev)) return prev;
-
-        const next = { ...prev };
-        delete next[id];
-
-        if (Object.keys(next).length > 0) {
-          writeSavedTasksMap(categoryId, next);
-        } else {
-          deleteSavedTasksMap(categoryId);
-        }
-
-        return next;
-      });
-    },
-    [categoryId],
-  );
-
-  /* Refresh stored copies when the server task changes. Do NOT drop saved ids
-     just because the live list is empty or differs (fetch errors, races, id
-     shape) — that was clearing localStorage when reopening a category. */
-  useEffect(() => {
-    if (!categoryId || isTaskFetching) return;
-    if (currentCategoryId !== categoryId) return;
-    if (tasks.length === 0) return;
-
-    setSavedTasksById((prev) => {
-      if (Object.keys(prev).length === 0) return prev;
-
-      const next = { ...prev };
-      let changed = false;
-
-      for (const task of tasks) {
-        const id = String(task.id);
-        if (!id || id === "undefined") continue;
-        if (id in prev && taskPayloadJson(prev[id]) !== taskPayloadJson(task)) {
-          next[id] = task;
-          changed = true;
-        }
-      }
-      if (changed) {
-        writeSavedTasksMap(categoryId, next);
-      }
-      return changed ? next : prev;
-    });
-  }, [tasks, categoryId, isTaskFetching, currentCategoryId]);
+  const handleConfirmDeleteCategory = async () => {
+    if (!categoryId) return;
+    await deleteCategories([categoryId]);
+    setDeleteCategoryOpen(false);
+    navigate("/workspace");
+  };
 
   return (
     <>
       <Workspace
         categoryId={categoryId as string}
-        categories={categories}
-        tasks={tasks}
-        notes={notes}
+        categoryName={category?.name ?? ""}
         isTaskFetching={isTaskFetching}
-        isNoteFetching={isNoteFetching}
-        isTaskMode={isTaskMode}
-        setIsTaskMode={setIsTaskMode}
-        taskLocalSave={{
-          isTaskSavedInBrowser,
-          toggleSaveTaskInBrowser,
-          removeTaskFromBrowserSave,
-        }}
+        donePct={donePct}
+        accentColor={accentColor}
+        onDeleteCategory={() => setDeleteCategoryOpen(true)}
+      />
+      <ConfirmActionDialog
+        open={deleteCategoryOpen}
+        onOpenChange={setDeleteCategoryOpen}
+        title="Delete this category?"
+        description={
+          category ? (
+            <>
+              <span className="font-medium text-foreground">
+                {category.name}
+              </span>{" "}
+              and all its tasks will be removed permanently. This cannot be
+              undone.
+            </>
+          ) : null
+        }
+        onConfirm={handleConfirmDeleteCategory}
       />
     </>
   );

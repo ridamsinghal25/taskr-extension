@@ -56,37 +56,42 @@ export function ConfirmActionDialog({
       }}
     >
       <AlertDialogContent
-        className={cn(
-          "overflow-hidden border-primary/25 bg-linear-to-b from-primary/10 from-0% via-background via-45% to-blue-500/5 to-100% p-0 shadow-lg shadow-primary/15 backdrop-blur-md sm:max-w-md",
-          "dark:from-primary/14 dark:via-background dark:to-blue-950/35",
-        )}
+        className="gap-0 overflow-hidden rounded-xl border border-white/6 bg-[#09090f] p-0 text-zinc-300 shadow-xl shadow-black/60 sm:max-w-md"
       >
-        <div className="border-b border-primary/15 bg-linear-to-r from-primary/8 via-primary/4 to-blue-500/6 px-6 py-4 dark:from-primary/12 dark:via-primary/6 dark:to-blue-950/30">
-          <AlertDialogHeader className="gap-1 space-y-0 text-left sm:text-left">
-            <AlertDialogTitle className="text-foreground">
+        <div className="border-b border-white/6 bg-[#0a0a14] px-5 py-4">
+          <AlertDialogHeader className="gap-0 space-y-0 text-left sm:text-left">
+            <AlertDialogTitle className="text-sm font-semibold text-zinc-100">
               {title}
             </AlertDialogTitle>
             {description ? (
-              <AlertDialogDescription className="text-balance text-muted-foreground">
+              <AlertDialogDescription className="mt-1.5 text-balance text-xs leading-relaxed text-zinc-500 [&_span]:font-medium [&_span]:text-zinc-200">
                 {description}
               </AlertDialogDescription>
             ) : null}
           </AlertDialogHeader>
         </div>
-        <AlertDialogFooter className="flex flex-col-reverse gap-2 bg-linear-to-t from-primary/5 to-transparent px-2 py-2 sm:flex-row sm:justify-end dark:from-primary/8">
-          <AlertDialogCancel disabled={pending} type="button">
+        <AlertDialogFooter className="flex flex-col-reverse gap-2 border-t border-white/6 bg-[#09090f] px-4 py-2 sm:flex-row sm:justify-end">
+          <AlertDialogCancel
+            disabled={pending}
+            type="button"
+            className="h-9 rounded-lg border-white/10 bg-white/6 px-4 text-xs font-semibold text-zinc-300 hover:border-white/15 hover:bg-white/10 hover:text-zinc-100"
+          >
             {cancelLabel}
           </AlertDialogCancel>
           <Button
             type="button"
             variant={confirmVariant}
             disabled={pending}
-            className="gap-2"
+            className={cn(
+              "h-9 gap-2 rounded-lg px-4 text-xs font-semibold",
+              confirmVariant === "destructive" &&
+                "border-0 bg-red-500 text-white hover:bg-red-600",
+            )}
             onClick={handleConfirm}
             autoFocus
           >
             {pending ? (
-              <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden />
+              <Loader2 className="size-3.5 shrink-0 animate-spin" aria-hidden />
             ) : null}
             <span>{confirmLabel}</span>
           </Button>

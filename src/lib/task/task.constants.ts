@@ -1,4 +1,4 @@
-import { TaskStatus, TaskType } from "@/types/task";
+import { TaskStatus, TaskType, type Task } from "@/types/task";
 
 /** Task types in UI / CLI order */
 export const TASK_TYPE_OPTIONS: TaskType[] = [
@@ -20,4 +20,12 @@ export function isTaskTypeValue(value: string): value is TaskType {
 
 export function isTaskStatusValue(value: string): value is TaskStatus {
   return TASK_STATUS_OPTIONS.includes(value as TaskStatus);
+}
+
+/** Newest tasks first. */
+export function sortTasksByCreatedAtDesc(tasks: Task[]): Task[] {
+  return [...tasks].sort(
+    (a, b) =>
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
 }
