@@ -35,6 +35,10 @@ class TaskExtensionService {
     });
   }
 
+  async getRecentTasks<T>(): Promise<ApiResponse<T> | ApiError> {
+    return ExtensionAPI.send(MessageType.GET_RECENT_TASKS);
+  }
+
   async updateTask<T>(
     taskId: string,
     categoryId: string,

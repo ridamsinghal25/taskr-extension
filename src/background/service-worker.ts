@@ -67,6 +67,9 @@ async function handleMessage(message: any) {
     case MessageType.GET_TASK_BY_ID:
       return taskService.getTaskById(payload.taskId);
 
+    case MessageType.GET_RECENT_TASKS:
+      return taskService.getRecentTasks();
+
     case MessageType.UPDATE_TASK:
       return taskService.updateTask(
         payload.taskId,

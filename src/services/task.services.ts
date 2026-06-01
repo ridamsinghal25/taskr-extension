@@ -58,6 +58,18 @@ class TaskService {
     return response;
   }
 
+  async getRecentTasks<T>(): Promise<ApiResponse<T> | ApiError> {
+    const apiRequest = new ApiRequest(`${this.TASK_BASE_URL}/recent`);
+
+    const response = await apiRequest.getRequest<T>({});
+
+    if (isApiResponse(response)) {
+      return response;
+    }
+
+    return response;
+  }
+
   async updateTask<T>(
     taskId: string,
     categoryId: string,
