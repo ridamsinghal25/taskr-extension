@@ -13,15 +13,14 @@ import {
   clearCategoryCache,
   getCachedCategories,
   setCachedCategories,
-} from "@/lib/category/categoryLocalStorage";
+} from "@/lib/category/categoryChromeStorage";
 import ApiError from "@/services/ApiError";
 import type ApiResponse from "@/services/ApiResponse";
 import { CategoryContext } from "./CategoryContext";
+import { useCategoriesCache } from "@/hooks/useCachedCategory";
 
 export function CategoryProvider({ children }: { children: ReactNode }) {
-  const [categories, setCategories] = useState<GetCategoriesResponse[]>(() => {
-    return getCachedCategories() ?? [];
-  });
+  const {categories, setCategories} = useCategoriesCache()
   const [currentCategoryId, setCurrentCategoryId] = useState<string | null>(
     null,
   );
@@ -35,7 +34,7 @@ export function CategoryProvider({ children }: { children: ReactNode }) {
   const fetchCategories = useCallback(async () => {
     setIsFetching(true);
 
-    const cachedCategories = getCachedCategories();
+    const cachedCategories = await getCachedCategories();
     if (cachedCategories && cachedCategories.length > 0) {
       setCategories(cachedCategories);
       setIsFetching(false);

@@ -18,4 +18,13 @@ export default defineManifest({
     service_worker: 'src/background/service-worker.ts',
     type: 'module',
   },
+
+  content_scripts: [
+    {
+      matches: ["<all_urls>"],
+      js: ["src/content/index.tsx"],
+    },
+  ],
+
+  action: {}
 })
