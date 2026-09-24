@@ -166,7 +166,11 @@ export default function TaskDialog({
                       No results for "{query}"
                     </p>
                   ) : (
-                    filteredCategories.map((c, i) => (
+                    <div
+                      className="max-h-[240px] overflow-y-auto overscroll-contain"
+                      onWheel={(e) => e.stopPropagation()}
+                    >
+                    {filteredCategories.map((c, i) => (
                       <div
                         key={c.id}
                         className={`flex cursor-pointer items-center gap-2.5 px-3 py-2.5 text-sm transition-colors ${
@@ -186,7 +190,8 @@ export default function TaskDialog({
                         </span>
                         <span className="font-medium text-black">{c.name}</span>
                       </div>
-                    ))
+                    ))}
+                    </div>
                   )}
                 </div>
               )}
