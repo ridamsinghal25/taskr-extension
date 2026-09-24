@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
+import { toast } from "react-toastify";
 import { useTaskContext } from "@/context/TaskContext/TaskContextProvider";
 import { sortTasksByCreatedAtDesc } from "@/lib/task/task.constants";
 import { getCategoryColor } from "@/lib/utils";
@@ -22,6 +23,7 @@ export function TaskListPanelContainer() {
 
   const [taskIdToDelete, setTaskIdToDelete] = useState<string | null>(null);
   const [filter, setFilter] = useState<TaskFilter>("all");
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
 
   const { counts, filteredTasks } = useMemo(() => {
     const visible = tasks.filter((t) => t.status !== TaskStatus.Archived);
@@ -68,6 +70,25 @@ export function TaskListPanelContainer() {
     await updateTask(task.id, categoryId, { type: next });
   };
 
+  const handleTaskSave = async (task: Task, newName: string) => {
+    setEditingTaskId(null);
+
+    const trimmedName = newName.trim();
+
+    if (!categoryId || !trimmedName || trimmedName === task.name) return;
+    
+    await updateTask(task.id, categoryId, { name: trimmedName });
+  };
+
+  const handleTaskCopy = async (task: Task) => {
+    try {
+      await navigator.clipboard.writeText(task.name);
+      toast.success("Task copied");
+    } catch {
+      toast.error("Unable to copy task");
+    }
+  };
+
   const handleConfirmDelete = async () => {
     if (!taskIdToDelete || !categoryId) return;
     await deleteTasks([taskIdToDelete], categoryId);
@@ -86,6 +107,10 @@ export function TaskListPanelContainer() {
       onToggleDone={handleToggleDone}
       onToggleType={handleToggleType}
       onRequestDelete={setTaskIdToDelete}
+      editingTaskId={editingTaskId}
+      handleTaskEdit={setEditingTaskId}
+      handleTaskSave={handleTaskSave}
+      handleTaskCopy={handleTaskCopy}
       deleteDialogOpen={taskIdToDelete !== null}
       pendingDeleteName={taskPendingDelete?.name}
       onDeleteDialogOpenChange={(open) => {

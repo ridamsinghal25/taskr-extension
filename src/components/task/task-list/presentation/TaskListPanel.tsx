@@ -1,13 +1,15 @@
-import { Inbox, Loader2, Trash2 } from "lucide-react";
+import { Copy, Inbox, Loader2, Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import type { CSSProperties } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { ConfirmActionDialog } from "@/components/dialog/ConfirmActionDialog";
 import type { Task } from "@/types/task";
 import { TaskType } from "@/types/task";
+import { KeyboardKey } from "@/types/keyboard";
 
 export type TaskFilter = "all" | "pending" | "done";
 
@@ -22,6 +24,10 @@ export type TaskListPanelProps = {
   onToggleDone: (task: Task) => void;
   onToggleType: (task: Task) => void;
   onRequestDelete: (taskId: string) => void;
+  editingTaskId: string | null;
+  handleTaskEdit: (taskId: string) => void;
+  handleTaskSave: (task: Task, newName: string) => void;
+  handleTaskCopy: (task: Task) => void;
   deleteDialogOpen: boolean;
   pendingDeleteName: string | undefined;
   onDeleteDialogOpenChange: (open: boolean) => void;
@@ -61,6 +67,10 @@ export function TaskListPanel({
   onToggleDone,
   onToggleType,
   onRequestDelete,
+  editingTaskId,
+  handleTaskEdit,
+  handleTaskSave,
+  handleTaskCopy,
   deleteDialogOpen,
   pendingDeleteName,
   onDeleteDialogOpenChange,
@@ -121,6 +131,7 @@ export function TaskListPanel({
             const isDeletingThis = deletingTaskId === task.id;
             const isRowBusy = isUpdatingThis || isDeletingThis;
             const isDone = task.status === "done";
+            const isEditing = editingTaskId === task.id;
             const typeStyle = TYPE_STYLES[task.type];
 
             return (
@@ -147,16 +158,41 @@ export function TaskListPanel({
                   />
 
                   <div className="min-w-0 flex-1">
-                    <p
-                      className={cn(
-                        "font-mono text-xs leading-relaxed wrap-break-word whitespace-pre-wrap",
-                        isDone
-                          ? "text-zinc-600 line-through"
-                          : "text-zinc-200",
-                      )}
-                    >
-                      {task.name}
-                    </p>
+                    {isEditing ? (
+                      <Textarea
+                        autoFocus
+                        defaultValue={task.name}
+                        aria-label="Edit task"
+                        className="min-h-0 resize-none border-white/10 bg-transparent px-2 py-1 font-mono text-xs text-zinc-200"
+                        onBlur={(event) =>
+                          handleTaskSave(task, event.currentTarget.value)
+                        }
+                        onKeyDown={(event) => {
+                          if (event.key === KeyboardKey.Escape) {
+                            // restoring the original name makes the save a no-op
+                            event.currentTarget.value = task.name;
+                          }
+                          if (
+                            event.key === KeyboardKey.Escape ||
+                            (event.key === KeyboardKey.Enter && !event.shiftKey)
+                          ) {
+                            event.preventDefault();
+                            event.currentTarget.blur();
+                          }
+                        }}
+                      />
+                    ) : (
+                      <p
+                        className={cn(
+                          "font-mono text-xs leading-relaxed wrap-break-word whitespace-pre-wrap",
+                          isDone
+                            ? "text-zinc-600 line-through"
+                            : "text-zinc-200",
+                        )}
+                      >
+                        {task.name}
+                      </p>
+                    )}
                     {task.attachments?.length > 0 && (
                       <div className="mt-2 flex gap-2 overflow-x-auto">
                         {task.attachments.map((attachment) => (
@@ -193,7 +229,28 @@ export function TaskListPanel({
                     {typeStyle.label}
                   </button>
 
-                  <div className="mt-0.5 flex shrink-0 items-center opacity-0 transition group-hover/task:opacity-100">
+                  <div className="mt-0.5 flex shrink-0 items-center opacity-0 transition group-hover/task:opacity-100 focus-within:opacity-100">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-xs"
+                      className="size-6 text-zinc-500 hover:bg-white/10 hover:text-zinc-200"
+                      onClick={() => handleTaskCopy(task)}
+                      aria-label="Copy task"
+                    >
+                      <Copy className="size-3.5" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-xs"
+                      className="size-6 text-zinc-500 hover:bg-white/10 hover:text-zinc-200"
+                      disabled={isRowBusy || isEditing}
+                      onClick={() => handleTaskEdit(task.id)}
+                      aria-label="Edit task"
+                    >
+                      <Pencil className="size-3.5" />
+                    </Button>
                     <Button
                       type="button"
                       variant="ghost"
